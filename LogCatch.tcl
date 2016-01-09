@@ -240,26 +240,26 @@ menu .logmenu -tearoff 0
 .logmenu add cascade -menu .logmenu.fe -label "Add Filter Exclusive"
 .logmenu add separator
 .logmenu add cascade -menu .logmenu.clear -label "Clear Log ..."
-menu .logmenu.hi
+menu .logmenu.hi -tearoff 0
 .logmenu.hi add command -label "Yellow" -command "highlight yellow"
 .logmenu.hi add command -label "Purple" -command "highlight purple"
 .logmenu.hi add command -label "Pink" -command "highlight pink"
 .logmenu.hi add command -label "lightgreen" -command "highlight lightgreen"
-menu .logmenu.fi
+menu .logmenu.fi -tearoff 0
 .logmenu.fi add command -label "Start time by this line" -command "addFilter stime in"
 .logmenu.fi add command -label "Stop  time by this line" -command "addFilter etime in"
 .logmenu.fi add command -label "Process by this line" -command "addFilter process in"
 .logmenu.fi add command -label "Tag by this line" -command "addFilter tag in"
 .logmenu.fi add command -label "Thread by this line" -command "addFilter thread in"
-menu .logmenu.fe
+menu .logmenu.fe -tearoff 0
 .logmenu.fe add command -label "Start time by this line" -command "addFilter stime ex"
 .logmenu.fe add command -label "Stop  time by this line" -command "addFilter etime ex"
 .logmenu.fe add command -label "Process by this line" -command "addFilter process ex"
 .logmenu.fe add command -label "Tag by this line" -command "addFilter tag ex"
 .logmenu.fe add command -label "Thread by this line" -command "addFilter thread ex"
-menu .logmenu.clear
+menu .logmenu.clear -tearoff 0
 .logmenu.clear add cascade -menu .logmenu.clear.auto -label "Clear Auto .."
-menu .logmenu.clear.auto
+menu .logmenu.clear.auto -tearoff 0
 .logmenu.clear.auto add radiobutton -value none -variable ClearAuto -label "None .. leaving All" -command ""
 .logmenu.clear.auto add radiobutton -value 3000 -variable ClearAuto -label "Auto .. leaving latest 3000L" -command ""
 .logmenu.clear.auto add radiobutton -value 5000 -variable ClearAuto -label "Auto .. leaving latest 5000L" -command ""
@@ -1015,8 +1015,8 @@ proc showProcessList {w} {
     if {[winfo exist $m]} {
       destroy $m
     }
-    menu $m
-    menu $m.plist
+    menu $m -tearoff 0
+    menu $m.plist -tearoff 0
     $m add cascade -menu $m.plist -label "Add Process Filter"
     $m add separator
     set lists [getProcessPackageList]
@@ -1026,7 +1026,7 @@ proc showProcessList {w} {
     }
     set x 0
     foreach alist $ProcessFilters {
-	menu $m.desel$x
+	menu $m.desel$x -tearoff 0
 	$m.desel$x add command -label deselect -command "processFilter $w del \"$alist\""
 	$m add cascade -menu $m.desel$x -label "$alist"
 	incr x
@@ -1068,7 +1068,7 @@ proc showHistoryList {w} {
     if {[winfo exist $m]} {
       destroy $m
     }
-    menu $m
+    menu $m -tearoff 0
     foreach afile [lrange $LoadedFiles 0 19] {
 	set afile [escapeSpace $afile]
 	$m add command -label "$afile" -command "loadFile $afile"
