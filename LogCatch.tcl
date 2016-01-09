@@ -978,8 +978,12 @@ proc getDevices {} {
   return $devices
 }
 
-proc getSerial {device} {
-  return [string tolower [lindex [split $device :] 1]]
+proc getSerial {device {lower 0}} {
+  if {$lower} {
+    return [string tolower [lindex [split $device :] 1]]
+  } else {
+    return [lindex [split $device :] 1]
+  }
 }
 
 proc detectDevices {} {
@@ -998,6 +1002,7 @@ proc getProcessPackageList {} {
     global ADB_PATH Device
     set lists ""
     if {![string match "file:*" $Device]} {
+puts D:$Device
         set serial [getSerial $Device]
         if {$serial != ""} {
 	    foreach {pId pkgName uName} [exec $ADB_PATH -s $serial shell ps | awk "/^u0|^app/ {print \$2, \$9, \$1}"] {
@@ -1089,11 +1094,12 @@ proc updateSourceList {} {
   pack [button .top.sources.devices -text "Devices.." -command detectDevices] -side left
   set dlen [llength $Devices]
   foreach device [lrange $Devices 0 2] {
-    set serial [getSerial $device]
+    set seriallow [getSerial $device 1]
+    set serialraw [getSerial $device]
     set model  [lindex [split $device :] 0]
-puts "se: $serial  device: $device"
-    set name "$model:[string range $serial 0 3]"
-    pack [radiobutton .top.sources.$serial -variable Device -value $device -command openSource -text $name] -side left
+puts "se: $serialraw  device: $device"
+    set name "$model:[string range $serialraw 0 3]"
+    pack [radiobutton .top.sources.$seriallow -variable Device -value $device -command openSource -text $name] -side left
   }
   if {$dlen > 3} {
     pack [button .top.sources.otherdevices -text "Other.." -command listOtherDevices] -side left
