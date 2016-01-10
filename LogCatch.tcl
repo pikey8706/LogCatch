@@ -1025,9 +1025,18 @@ proc showProcessList {w} {
     $m add cascade -menu $m.plist -label "Add Process Filter"
     $m add separator
     set lists [getProcessPackageList]
+    set cnt 0
+    set mod 19
+    set mx $m.plist
     foreach alist $lists {
+	incr cnt
+	if {[expr $cnt % $mod] == 0} {
+   	   menu $mx.plist -tearoff 0
+	   $mx add cascade -menu $mx.plist -label "More.."
+	   set mx $mx.plist
+        }
 	set pId [lindex $alist 0]
-	$m.plist add command -label "$alist" -command "processFilter $w add \"$alist\""
+	$mx add command -label "$alist" -command "processFilter $w add \"$alist\""
     }
     set x 0
     foreach alist $ProcessFilters {
