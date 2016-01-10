@@ -1164,6 +1164,12 @@ proc wVector {w {cond "1"} {cmd ""}} {
     }
 }
 
+if {$OS == "Darwin"} {
+  proc tk::mac::Quit {} {
+      safeQuit
+  }
+}
+
 proc checkSdkPath {{w ""} {w2 ""} {sdk_path ""} args} {
     global SDK_PATH ADB_PATH
     puts "$w $sdk_path :: $args"
