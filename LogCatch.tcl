@@ -435,9 +435,15 @@ wrapMenu
 
 proc encodingMenu {} {
   global Encoding
+  set defaultCode "utf-8"
   set lists [lsort [encoding names]]
+  set defIdx [lsearch $lists $defaultCode]
   set m .encodings
   menu $m -tearoff 0
+  if {$defIdx > -1} {
+     $m add radiobutton -label "Default: $defaultCode" -value $defaultCode -variable Encoding -command changeEncoding
+     $m add separator
+  }
   foreach one $lists {
     $m add radiobutton -label "$one" -value $one -variable Encoding -command changeEncoding
   }
