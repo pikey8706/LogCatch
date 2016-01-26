@@ -434,7 +434,7 @@ puts "changeWrapMode $WrapMode"
 wrapMenu
 
 proc encodingMenu {} {
-  global Encoding
+  global Encoding Codes
   set defaultCode "utf-8"
   set lists [lsort [encoding names]]
   set defIdx [lsearch $lists $defaultCode]
@@ -444,8 +444,19 @@ proc encodingMenu {} {
      $m add radiobutton -label "Default: $defaultCode" -value $defaultCode -variable Encoding -command changeEncoding
      $m add separator
   }
-  foreach one $lists {
-    $m add radiobutton -label "$one" -value $one -variable Encoding -command changeEncoding
+  source ./codes.tcl
+  set group [lsort [array names Codes]]
+  foreach one $group {
+    set gmenu $m.[string tolower $one]
+    menu $gmenu -tearoff 0
+    $m add cascade -menu $gmenu -label "$one"
+    foreach two $lists {
+      set idx [lsearch $Codes($one) $two]
+      if {$idx > -1} {
+        $gmenu add radiobutton -label "$two" -value $two -variable Encoding -command changeEncoding
+      }
+    }
+
   }
   bind .b.encode <1> "tk_popup $m %X %Y"
 }
@@ -1244,4 +1255,3 @@ onlyFocusEntry
 #detectDevices
 getAdbPath
 getProcessPackageList
-
