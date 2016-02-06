@@ -124,7 +124,7 @@ menu .mbar.i.f
 set t [frame .top ];#-bg pink]
 pack $t -side top -fill x
 #pack [button $t.rec -text Rec] -side left
-#pack [button $t.clr -text "Clear Log" -command clearLogView] -side right
+pack [button $t.clr -text "Clear Log" -command clearLogView] -side right
 pack [labelframe $t.sources -text "Source" -labelanchor w] -side left
 
 # pane
