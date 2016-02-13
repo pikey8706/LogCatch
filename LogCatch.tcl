@@ -124,7 +124,7 @@ menu .mbar.i.f
 set t [frame .top ];#-bg pink]
 pack $t -side top -fill x
 #pack [button $t.rec -text Rec] -side left
-pack [button $t.clr -text "Clear Log" -command clearLogView] -side right
+#pack [button $t.clr -text "Clear Log" -command clearLogView] -side right
 pack [labelframe $t.sources -text "Source" -labelanchor w] -side left
 
 # pane
@@ -1187,35 +1187,45 @@ if {$OS == "Darwin"} {
   }
 }
 
-proc checkSdkPath {{w ""} {w2 ""} {sdk_path ""} args} {
+proc checkAdbPath {{w ""} {w2 ""} {sdk_path ""} args} {
     global SDK_PATH ADB_PATH
-    puts "$w $sdk_path :: $args"
-    set status "confirmed"
+    puts "$sdk_path mm $args"
+    set status "Not confirmed"
     set statusSdk $status
+    set bg red
     if {[file isdirectory $SDK_PATH/platform-tools] &&
         [file isdirectory $SDK_PATH/build-tools] &&
         [file isdirectory $SDK_PATH/tools]} {
-        set ADB_PATH [exec find $SDK_PATH -maxdepth 2 -type f -name "adb*"]
-        if {[file executable $ADB_PATH]} {
-            set statusSdk "confimed at $ADB_PATH"
-        } else {
-            set statusSdk "I'm afraid it is not adb command: $ADB_PATH"
+         # puts [exec /usr/bin/find $SDK_PATH -maxdepth 2 -type f -name "adb*"]
+        if {[file executable $SDK_PATH/tools/adb]} {
+          set ADB_PATH $SDK_PATH/tools/adb
+        } elseif {[file executable $SDK_PATH/tools/adb.exe]} {
+          set ADB_PATH $SDK_PATH/tools/adb.exe
+        } elseif {[file executable $SDK_PATH/platform-tools/adb]} {
+          set ADB_PATH $SDK_PATH/platform-tools/adb
+        } elseif {[file executable $SDK_PATH/platform-tools/adb.exe]} {
+          set ADB_PATH $SDK_PATH/platform-tools/adb.exe
         }
+        if {[file executable $ADB_PATH]} {
+            set status "confirmed"
+            set bg green
+        }
+        set statusSdk "confirmed"
     } else {
-       set status "I'm afraid it is Not SDK directory: $SDK_PATH"
+      set ADB_PATH ""
     }
     if [winfo exist $w] {
-      $w config -text $status
+      $w config -text "$statusSdk: \"$SDK_PATH\"" -bg $bg
     }
     if [winfo exist $w2] {
-      $w2 config -text $statusSdk
+      $w2 config -text "$status: \"$ADB_PATH\"" -bg $bg
     }
     return $status
 }
 
 proc getSdkPath {} {
     global SDK_PATH
-    set status [checkSdkPath]
+    set status [checkAdbPath]
     if {$status == "confirmed"} {
        return
     }
@@ -1223,23 +1233,33 @@ proc getSdkPath {} {
     toplevel $w
     wm title $w "Setup SDK_PATH"
     wm transient $w .
-    after 100 grab set -global $w
-    wm protocol $w WM_DELETE_WINDOW "grab release $w"
-    pack [button $w.close -text Close -command "destroy $w"] -side bottom
+    wm minsize $w 500 120
+    wm maxsize $w 9000 120
+    # after 100 grab set -global $w
+    wm protocol $w WM_DELETE_WINDOW "setTraceSdkPath $w 0; destroy $w"
+    pack [button $w.close -text Close -command "setTraceSdkPath $w 0; destroy $w"] -side bottom
     pack [label  $w.msg -text "Please locate Android SDK Directory."]
     pack [set wi [frame  $w.inputarea -relief ridge]] -fill x -expand yes
     pack [button  $wi.browse -text browse \
 	-command {set SDK_PATH [tk_chooseDirectory -initialdir ~ -title "choose SDK Directory"]}] -side right
     pack [entry  $wi.path -textvariable SDK_PATH] -expand yes -fill x
-    pack [set ws1 [frame  $w.statusarea1 -relief ridge]] -fill x -expand yes
-    pack [label $ws1.statusmsg -text "status of SDK path:"] -side left
-    pack [label $ws1.statusval -text "$status"] -side left
-    pack [set ws2 [frame  $w.statusarea2 -relief ridge]] -fill x -expand yes
-    pack [label $ws2.statusmsg -text "status of adb path:"] -side left
-    pack [label $ws2.statusval -text "-"] -side left
-    trace variable SDK_PATH w "checkSdkPath $ws1.statusval $ws2.statusval"
+    pack [set ws1 [frame  $w.statussdk -relief ridge]] -fill x -expand yes
+    pack [label $ws1.msg -text "status of SDK path:"] -side left
+    pack [label $ws1.val -text "$status"] -side left
+    pack [set ws2 [frame  $w.statusadb -relief ridge]] -fill x -expand yes
+    pack [label $ws2.msg -text "status of adb path:"] -side left
+    pack [label $ws2.val -text "$status"] -side left
+    setTraceSdkPath $w 1
+    set SDK_PATH ""
 }
-
+proc setTraceSdkPath {w on} {
+  global SDK_PATH
+  if {$on} {
+      trace variable SDK_PATH w "after 1000 checkAdbPath $w.statussdk.val $w.statusadb.val"
+  } else {
+      trace vdelete SDK_PATH w "after 1000 checkAdbPath $w.statussdk.val $w.statusadb.val"
+  }
+}
 proc getAdbPath {} {
     global SDK_PATH ADB_PATH
     if {![file executable $ADB_PATH]} {
