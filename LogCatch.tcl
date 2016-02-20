@@ -6,6 +6,7 @@ exec wish "$0" -- "$@"
 set AppName "LogCatch"
 set SDK_PATH "$env(HOME)"
 set ADB_PATH ""
+set NO_ADB 0
 set CONST_MODEL "ro.product.model"
 set CONST_VERSION "ro.build.version.release"
 set CONST_ENCODING "utf-8"
@@ -577,7 +578,7 @@ proc loadPreference {} {
 }
 
 proc saveLastState {} {
-    global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH
+    global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
     if {! [file isdirectory $dir]} {
@@ -610,13 +611,15 @@ proc saveLastState {} {
 	    puts $fdW $SDK_PATH
 	    puts $fdW ":ADB_PATH"
 	    puts $fdW $ADB_PATH
+	    puts $fdW ":NO_ADB"
+	    puts $fdW $NO_ADB
 	    puts $fdW ":"
         close $fdW
     }
 }
 
 proc loadLastState {} {
-    global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH
+    global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
     if {! [file isdirectory $dir]} {
@@ -649,6 +652,8 @@ proc loadLastState {} {
 		      set flag 8
                    } elseif {[string match ":ADB_PATH" $line]} {
 		      set flag 9
+                   } elseif {[string match ":NO_ADB" $line]} {
+		      set flag 10
                    } else {
 		      set flag 0
                    }
@@ -670,6 +675,8 @@ proc loadLastState {} {
 		   set SDK_PATH $line
                 } elseif {$flag == 9} { 
 		   set ADB_PATH $line
+                } elseif {$flag == 10} { 
+		   set NO_ADB $line
 		} else {
                 }
         }
@@ -1224,7 +1231,7 @@ proc checkAdbPath {{w ""} {w2 ""} {sdk_path ""} args} {
 }
 
 proc getSdkPath {} {
-    global SDK_PATH
+    global SDK_PATH NO_ADB
     set status [checkAdbPath]
     if {$status == "confirmed"} {
        return
@@ -1233,11 +1240,12 @@ proc getSdkPath {} {
     toplevel $w
     wm title $w "Setup SDK_PATH"
     wm transient $w .
-    wm minsize $w 500 120
-    wm maxsize $w 9000 120
+    wm minsize $w 500 140
+    wm maxsize $w 9000 140
     # after 100 grab set -global $w
     wm protocol $w WM_DELETE_WINDOW "setTraceSdkPath $w 0; destroy $w"
-    pack [button $w.close -text Close -command "setTraceSdkPath $w 0; destroy $w"] -side bottom
+    pack [frame $w.btm -relief raised] -side bottom
+    pack [button $w.btm.close -text Close -command "setTraceSdkPath $w 0; destroy $w"] -side right
     pack [label  $w.msg -text "Please locate Android SDK Directory."]
     pack [set wi [frame  $w.inputarea -relief ridge]] -fill x -expand yes
     pack [button  $wi.browse -text browse \
@@ -1249,9 +1257,11 @@ proc getSdkPath {} {
     pack [set ws2 [frame  $w.statusadb -relief ridge]] -fill x -expand yes
     pack [label $ws2.msg -text "status of adb path:"] -side left
     pack [label $ws2.val -text "$status"] -side left
+    pack [checkbutton $w.later -text "Setup SDK_PATH Later" -variable NO_ADB] -side bottom
     setTraceSdkPath $w 1
     set SDK_PATH ""
 }
+
 proc setTraceSdkPath {w on} {
   global SDK_PATH
   if {$on} {
@@ -1260,6 +1270,7 @@ proc setTraceSdkPath {w on} {
       trace vdelete SDK_PATH w "after 1000 checkAdbPath $w.statussdk.val $w.statusadb.val"
   }
 }
+
 proc getAdbPath {} {
     global SDK_PATH ADB_PATH
     if {![file executable $ADB_PATH]} {
@@ -1273,5 +1284,8 @@ loadLastState
 onlyFocusEntry
 #wVector . 1 "config -takefocus"
 #detectDevices
-getAdbPath
+if {!$NO_ADB} {
+    getAdbPath
+}
+
 getProcessPackageList
