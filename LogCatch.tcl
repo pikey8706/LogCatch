@@ -1030,7 +1030,7 @@ puts D:$Device
         set serial [getSerial $Device]
         if {$serial != ""} {
 	    foreach {pId pkgName uName} [exec $ADB_PATH -s $serial shell ps | awk "/^u0|^app/ {print \$2, \$9, \$1}"] {
-		lappend lists "$pId $pkgName $uName"
+		lappend lists "$pId $pkgName"
 	    }
 	}
 	set lists [lsort -integer -index 0 -decr $lists] 
