@@ -22,7 +22,7 @@ set statusOne .b.1
 set statusTwo .b.2
 set status3rd .b.3
 set MaxRow 2500
-set TailTrack 0
+set TrackTail 0
 set LogLevel(V) 1
 set LogLevel(D) 1
 set LogLevel(I) 1
@@ -85,7 +85,7 @@ frame .b -bg "#00eeee" -relief sunken
 pack .b -side bottom -fill x
 pack [label .b.1 -text status1 -relief sunken] -side left
 pack [label .b.2 -text status2 -relief sunken] -side left
-pack [checkbutton .b.stick -text TailTrack -command "trackTail" -variable TailTrack -relief sunken] -side right -padx 3
+pack [checkbutton .b.stick -text TrackTail -command "trackTail" -variable TrackTail -relief sunken] -side right -padx 3
 pack [label .b.wmode -text LineWrap -relief sunken] -side right
 pack [label .b.encode -text Encoding -relief sunken] -side right
 pack [label .b.logtype -text "LogType:" -relief sunken] -side right
@@ -302,7 +302,7 @@ proc getTag {loglevel} {
 }
 
 proc logcat {{clear 1} fd {doFilter 0}} {
-    global logview Device Fd LineCount TailTrack
+    global logview Device Fd LineCount TrackTail
 
     if {$Fd == ""} {
        tk_messageBox -title "Error" -message "Failed to open log: $Device ." -type ok -icon error
@@ -322,7 +322,7 @@ proc logcat {{clear 1} fd {doFilter 0}} {
 }
 
 proc readLine {fd} {
-     global logview LineCount statusOne statusTwo MaxRow TailTrack updateTask EndLabel
+     global logview LineCount statusOne statusTwo MaxRow TrackTail updateTask EndLabel
      $logview config -state normal
      if {[eof $fd]} {
          #$logview insert end $EndLabel colorBlk
@@ -843,8 +843,8 @@ proc addFilter {kind which} {
 }
 
 proc trackTail {} {
-    global logview TailTrack updateTask
-    if {$TailTrack} {
+    global logview TrackTail updateTask
+    if {$TrackTail} {
        $logview see end
     }
     set updateTask ""
