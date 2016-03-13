@@ -980,6 +980,9 @@ proc getModel {device} {
 proc getDevices {} {
   global Devices ADB_PATH
   set devices ""
+  if {[getAdbPath] == -1} {
+    return
+  }
   foreach line [lrange [split [exec $ADB_PATH devices -l] \n] 1 end] {
       set serial [lindex $line 0]
       set model "null"
@@ -1119,7 +1122,7 @@ proc showHistoryList {w} {
 proc updateSourceList {} {
   global Devices Device LoadFile PrevLoadFile LoadedFiles
   foreach one [winfo children .top.sources] {
-      puts $one\ [winfo class $one]
+      puts destroy\ $one\ [winfo class $one]
 #    if {[winfo class $one] == "Radiobutton"} {
       destroy $one
 #    }
@@ -1135,7 +1138,8 @@ puts "se: $serialraw  device: $device"
     pack [radiobutton .top.sources.$seriallow -variable Device -value $device -command openSource -text $name] -side left
   }
   if {$dlen > 3} {
-    pack [button .top.sources.otherdevices -text "Other.." -command listOtherDevices] -side left
+    pack [button .top.sources.otherdevices -text "Other.." \
+	-command "listOtherDevices .top.sources.otherdevices"] -side left
   }
   pack [button .top.sources.files -text "Files.." -command loadFile] -side left
   foreach w "loadfile1 loadfile2 loadfile3" afile "[lrange $LoadedFiles 0 2]" {
@@ -1151,8 +1155,24 @@ puts "se: $serialraw  device: $device"
 #  bind .top.sources.filehistory <1> {tk_popup .loadhistory %X %Y}
 }
 
-proc listOtherDevices {} {
-
+proc listOtherDevices {w} {
+    global Devices LoadedFiles
+    set m .connectedDevices
+    if {[winfo exist $m]} {
+      destroy $m
+    }
+    menu $m -tearoff 0
+    foreach device [lrange $Devices 3 end] {
+      set seriallow [getSerial $device 1]
+      set serialraw [getSerial $device]
+      set model  [lindex [split $device :] 0]
+      puts "se: $serialraw  device: $device"
+      set name "$model:[string range $serialraw 0 3]"
+      $m add radiobutton -label $name -value $device -variable Device -command "openSource"
+    }
+    set x [expr [winfo rootx $w] + [winfo width $w]]
+    set y [winfo rooty $w]
+    tk_popup $m $x $y
 }
 
 proc openEditor {} {
@@ -1239,8 +1259,8 @@ proc getAdbPath {} {
     global SDK_PATH NO_ADB
     set status [checkAdbPath]
     if {$status == "confirmed"} {
-       puts "ADB_PATH not confirmed."
-       return
+       puts "ADB_PATH already confirmed."
+       return 0
     }
     set w .sdkpath
     toplevel $w
@@ -1269,6 +1289,7 @@ proc getAdbPath {} {
     set ADB_PATH ""
     checkAdbPath $w
     setTraceAdbPath $w 1
+    return -1
 }
 
 proc setTraceAdbPath {w on} {
