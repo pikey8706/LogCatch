@@ -415,6 +415,19 @@ proc updateLoadedFiles {} {
     updateSourceList
 }
 
+proc loadDevice {} {
+    global Devices Device
+    set devices $Device
+    foreach xdevice $Devices {
+	if {![string match $Device $xdevice]} {
+	   lappend devices $xdevice
+	}
+    }
+    set Devices $devices
+    updateSourceList
+    openSource
+}
+
 proc wrapMenu {} {
   global WrapMode
   set m .wmode
@@ -1019,7 +1032,7 @@ proc detectDevices {} {
   set idx [expr {$OS =="Darwin" ? "2" : "3"}]
   .mbar.i.d delete $idx end
   foreach device $Devices {
-    .mbar.i.d add radiobutton -label $device -variable Device -value $device -command openSource
+    .mbar.i.d add radiobutton -label $device -variable Device -value $device -command loadDevice
   }
   updateSourceList
   return [lindex $Devices 0]
@@ -1135,7 +1148,7 @@ proc updateSourceList {} {
     set model  [lindex [split $device :] 0]
 puts "se: $serialraw  device: $device"
     set name "$model:[string range $serialraw 0 3]"
-    pack [radiobutton .top.sources.$seriallow -variable Device -value $device -command openSource -text $name] -side left
+    pack [radiobutton .top.sources.$seriallow -variable Device -value $device -command loadDevice -text $name] -side left
   }
   if {$dlen > 3} {
     pack [button .top.sources.otherdevices -text "Other.." \
@@ -1168,7 +1181,7 @@ proc listOtherDevices {w} {
       set model  [lindex [split $device :] 0]
       puts "se: $serialraw  device: $device"
       set name "$model:[string range $serialraw 0 3]"
-      $m add radiobutton -label $name -value $device -variable Device -command "openSource"
+      $m add radiobutton -label $name -value $device -variable Device -command loadDevice
     }
     set x [expr [winfo rootx $w] + [winfo width $w]]
     set y [winfo rooty $w]
