@@ -80,6 +80,8 @@ proc setEditor {} {
 wm deiconify .
 wm title . $AppName
 wm protocol . WM_DELETE_WINDOW safeQuit
+image create photo app_icon -file icon.png
+wm iconphoto . app_icon
 # Encoding
 encoding system $Encoding
 # bottom status line
@@ -87,7 +89,8 @@ frame .b -relief sunken;# -bg "#00eeee"
 pack .b -side bottom -fill x
 pack [label .b.1 -text "0" -relief sunken] -side left
 pack [label .b.2 -text $EOFLabel -relief sunken -fg red] -side left
-pack [checkbutton .b.stick -text TrackTail -command "trackTail" -variable TrackTail -relief sunken] -side right -padx 3
+pack [checkbutton .b.stick -text TrackTail -command "trackTail" -variable TrackTail -relief sunken] \
+	-side right -padx 3
 pack [label .b.wmode -text LineWrap -relief sunken] -side right
 pack [label .b.encode -text Encoding -relief sunken] -side right
 pack [label .b.logtype -text "LogType:" -relief sunken] -side right
@@ -127,6 +130,8 @@ menu .mbar.i.f
 set t [frame .top ];#-bg pink]
 pack $t -side top -fill x
 #pack [button $t.rec -text Rec] -side left
+image create photo menu_icon -file menu.png
+pack [button $t.menu -command "puts under-creating" -image menu_icon] -side right
 pack [button $t.clr -text "Clear Log" -command clearLogView] -side right
 pack [labelframe $t.sources -text "Source" -labelanchor w] -side left
 

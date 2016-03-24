@@ -28,3 +28,9 @@ To start
 type in bash:
 wish LogCatch.tcl
 
+Author:
+Hirohito Sasaki
+email: pikey8706@gmail.com
+
+Icon-Author:
+Designed by Freepik
