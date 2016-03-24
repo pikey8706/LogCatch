@@ -34,6 +34,8 @@ set WrapMode none
 set OS [exec uname -s]
 # set StartLabel "--- Start Viewing Log ---\n"
 # set EndLabel "--- End Of File reached ---\n"
+set ReadingLabel "Reading..."
+set EOFLabel "End Of File"
 set Encoding $CONST_ENCODING
 set ProcessFilters ""
 
@@ -83,13 +85,13 @@ encoding system $Encoding
 # bottom status line
 frame .b -bg "#00eeee" -relief sunken
 pack .b -side bottom -fill x
-pack [label .b.1 -text status1 -relief sunken] -side left
-pack [label .b.2 -text status2 -relief sunken] -side left
+pack [label .b.1 -text "0" -relief sunken] -side left
+pack [label .b.2 -text $EOFLabel -relief sunken -fg red] -side left
 pack [checkbutton .b.stick -text TrackTail -command "trackTail" -variable TrackTail -relief sunken] -side right -padx 3
 pack [label .b.wmode -text LineWrap -relief sunken] -side right
 pack [label .b.encode -text Encoding -relief sunken] -side right
 pack [label .b.logtype -text "LogType:" -relief sunken] -side right
-pack [label .b.3 -text status3 -relief ridge] -side left
+pack [label .b.3 -text "Source:" -relief ridge] -side left
 pack [button .b.b -text Editor -command openEditor] -side left
 
 # top menu
@@ -322,12 +324,12 @@ proc logcat {{clear 1} fd {doFilter 0}} {
 }
 
 proc readLine {fd} {
-     global logview LineCount statusOne statusTwo MaxRow TrackTail updateTask EndLabel
+     global logview LineCount statusOne statusTwo MaxRow TrackTail updateTask EndLabel EOFLabel
      $logview config -state normal
      if {[eof $fd]} {
          #$logview insert end $EndLabel colorBlk
 	 $logview config -state disabled
-	 $statusTwo config -text "End Of File" -fg red
+	 $statusTwo config -text $EOFLabel -fg red
 	 closeFd
 	 return
      }
@@ -705,7 +707,8 @@ proc getLogType {} {
 }
 
 proc openSource {} {
-    global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr statusTwo status3rd AppName ADB_PATH LogType
+    global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
+	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel EOFLabel
     closeFd
     set deny "!"
     set xiFilter [escapeSlash "$iFilter"]
@@ -730,7 +733,7 @@ reloadProc
 set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && /$LevelFilter/ $lvlAndOr /$xiFilter/ {print}{fflush()}\" " r]
     }
     puts "src: $Device fd: $Fd  eFilter: $eFilter => $xeFilter <> ifilter: $iFilter => $xiFilter LevelFilter => $LevelFilter $lvlAndOr"
-    $statusTwo config -text "Connected  " -fg "#15b742"
+    $statusTwo config -text $ReadingLabel -fg "#15b742"
     $status3rd config -text "Source: $Device"
     .b.logtype config -text "LogType: $LogType"
     wm title . "$AppName Source: $title"
