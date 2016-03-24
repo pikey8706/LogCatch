@@ -83,7 +83,7 @@ wm protocol . WM_DELETE_WINDOW safeQuit
 # Encoding
 encoding system $Encoding
 # bottom status line
-frame .b -bg "#00eeee" -relief sunken
+frame .b -relief sunken;# -bg "#00eeee"
 pack .b -side bottom -fill x
 pack [label .b.1 -text "0" -relief sunken] -side left
 pack [label .b.2 -text $EOFLabel -relief sunken -fg red] -side left
@@ -135,7 +135,7 @@ frame .p ;#-bg "#ff0000"
 pack .p -side top -expand y -fill both -ipadx 5 -ipady 5
 
 # left pane
-#set l [frame .p.lf -bg lightgreen]
+#set l [frame .p.lf];# -bg lightgreen
 #pack $l -side left -anchor w -fill both
 #label $l.msg -text SelectTags
 #pack $l.msg
@@ -158,7 +158,7 @@ global tagview
 set r [frame .p.rf -bg green]
 pack $r -side right -anchor e -fill both -expand yes -padx 5 -pady 5
 
-set hks [frame .p.rf.hks -bg lightblue]
+set hks [frame .p.rf.hks];# -bg lightblue
 pack $hks -fill x
 pack [label $hks.l -text "show level: "] -side left
 pack [checkbutton $hks.v -text V -command "changeLevel V" -variable LogLevel(V)] -side left
@@ -170,19 +170,19 @@ pack [checkbutton $hks.andor -textvariable LevelAndOr -variable LevelAndOr -offv
 pack [button $hks.process -text "Process none" -command "after 0 showProcessList $hks.process"] -side left -padx 30
 
 # Filter entry
-set filsi [frame .p.rf.filsi -bg lightblue]
+set filsi [frame .p.rf.filsi];# -bg lightblue
 pack $filsi -fill x
 pack [label $filsi.li -text "Filter Inclusive:"] -side left
 pack [entry $filsi.ei -textvariable iFilter] -side left -expand y -fill x
 pack [button $filsi.be -text Clear -command "set iFilter \"\"" -takefocus 0] -side right
-set filse [frame .p.rf.fils -bg lightblue]
+set filse [frame .p.rf.fils];# -bg lightblue
 pack $filse -fill x
 pack [label $filse.le -text "Filter Exclusive:"] -side left
 pack [entry $filse.ee -textvariable eFilter] -side left -fill x -expand y
 pack [button $filse.be -text Clear -command "set eFilter \"\"" -takefocus 0] -side right
 bind $filsi.ei <Return> "updateFilter $filsi.ei $filse.ee"
 bind $filse.ee <Return> "updateFilter $filsi.ei $filse.ee"
-set fsrch [frame .p.rf.search -bg lightblue]
+set fsrch [frame .p.rf.search];# -bg lightblue
 pack $fsrch -fill x
 pack [label $fsrch.l -text "Search:"] -side left
 pack [entry $fsrch.e -textvariable ssWord] -side left -fill x
