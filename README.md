@@ -63,7 +63,7 @@ To see log from devices after app launched, do below please.
  devices name will list in "Source:".
 - click Device name then log will be shown in window.
 
-![ScreenShot](https://{github.com/pikey8706/LogCatch/screenshot.png})
+![ScreenShot](https://raw.github.com/pikey8706/LogCatch/master/screenshot.png)
 
 Author:
 Hirohito Sasaki

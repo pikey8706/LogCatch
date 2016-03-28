@@ -1267,6 +1267,7 @@ proc checkAdbPath {{w ""} {sdk_path ""} args} {
         set status "confirmed"
         set bgAdb green
 	set laterEnabled disabled
+	updateSourceList
     }
     if [winfo exist $w] {
        $w.statusadb.val config -text "$status: \"$ADB_PATH\"" -bg $bgAdb
