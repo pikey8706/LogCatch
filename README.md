@@ -1,6 +1,5 @@
-Name
-===
 LogCatch
+===
 android adb logcat viewer for Linux/Mac/Windows
 
 This is written in tcl/tk.
@@ -48,21 +47,21 @@ wish LogCatch.tcl
 
 Windows user
 Assuming you have done installed msys-git.
-1. Download zip file: https://github.com/pikey8706/LogCatch/archive/master.zip
-2. unzip LogCatch-master.zip
-3. open LogCatch-master folder.
-4. Right click in folder.
-5. click Git bash (Here) menu.
-6. type below in bash window.
+- Download zip file: https://github.com/pikey8706/LogCatch/archive/master.zip
+- unzip LogCatch-master.zip
+- open LogCatch-master folder.
+- Right click in folder.
+- click Git bash (Here) menu.
+- type below in bash window.
 <pre>
 wish LogCatch.tcl
 </pre>
 
 To see log from devices after app launched, do below please.
-1. you should select android-sdk-directory or adb including directory from popup window.
-2. click "Devices" button to see device list connected to usb. after click Devices,
+- you should select android-sdk-directory or adb including directory from popup window.
+- click "Devices" button to see device list connected to usb. after click Devices,
  devices name will list in "Source:".
-3. click Device name then log will be shown in window.
+- click Device name then log will be shown in window.
 
 Author:
 Hirohito Sasaki
