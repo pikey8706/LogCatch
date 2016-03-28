@@ -80,8 +80,8 @@ proc setEditor {} {
 wm deiconify .
 wm title . $AppName
 wm protocol . WM_DELETE_WINDOW safeQuit
-image create photo app_icon -file icon.png
-wm iconphoto . app_icon
+#image create photo app_icon -file icon.png
+#wm iconphoto . app_icon
 # Encoding
 encoding system $Encoding
 # bottom status line
@@ -130,8 +130,8 @@ menu .mbar.i.f
 set t [frame .top ];#-bg pink]
 pack $t -side top -fill x
 #pack [button $t.rec -text Rec] -side left
-image create photo menu_icon -file menu.png
-pack [button $t.menu -command "puts under-creating" -image menu_icon] -side right
+#image create photo menu_icon -file menu.png
+#pack [button $t.menu -command "puts under-creating" -image menu_icon] -side right
 pack [button $t.clr -text "Clear Log" -command clearLogView] -side right
 pack [labelframe $t.sources -text "Source" -labelanchor w] -side left
 
@@ -198,10 +198,10 @@ pack [button $fsrch.p -text "Prev" -command "searchWordAll $r.l -backward $fsrch
 pack [button $fsrch.x -text "Clear" -command "clearSearchAll"] -side left
 bind $fsrch.e <Return> "searchAuto $r.l $fsrch.e"
 bind $fsrch.e <Shift-Return> "searchAuto $r.l $fsrch.e -r"
-pack [entry $fsrch.2 -textvariable s2Word] -side left -fill x
-pack [entry $fsrch.3 -textvariable s3Word] -side left -fill x
-pack [entry $fsrch.4 -textvariable s4Word] -side left -fill x
-pack [entry $fsrch.5 -textvariable s5Word] -side left -fill x
+#pack [entry $fsrch.2 -textvariable s2Word] -side left -fill x
+#pack [entry $fsrch.3 -textvariable s3Word] -side left -fill x
+#pack [entry $fsrch.4 -textvariable s4Word] -side left -fill x
+#pack [entry $fsrch.5 -textvariable s5Word] -side left -fill x
 
 # entry
 #pack [entry .p.rf.e ] -fill x
