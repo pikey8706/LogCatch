@@ -131,7 +131,41 @@ set t [frame .top ];#-bg pink]
 pack $t -side top -fill x
 #pack [button $t.rec -text Rec] -side left
 #image create photo menu_icon -file menu.png
-#pack [button $t.menu -command "puts under-creating" -image menu_icon] -side right
+pack [button $t.menu -text Menus -command "menuLogcatch $t.menu"] -side right;# -image menu_icon
+proc menuLogcatch {w} {
+    global 
+    set m .logcatchmenu
+    if {[winfo exist $m]} {
+      destroy $m
+    }
+    menu $m -tearoff 0
+    $m add command -label About -command "showAbout"
+    $m add command -label Preferences -command "showPreferences"
+    $m add separator
+    $m add command -label HistoryBrowser -command "showHistoryBrowser"
+    $m add separator
+    $m add command -label Quit -command "safeQuit"
+    set x [expr [winfo rootx $w] - [winfo width $w]]
+    set y [winfo rooty $w]
+    tk_popup $m $x $y
+}
+proc showPreferences {} {
+    global ADB_PATH
+    set w .preferences
+    toplevel $w
+    wm title $w "Preferences"
+    wm protocol $w WM_DELETE_WINDOW "destroy $w"
+    pack [frame $w.bottom -relief raised] -fill x -expand yes -side bottom -anchor s
+    pack [button $w.bottom.close -text Close -command "destroy $w"] -side right
+    pack [frame $w.f1] -fill x
+    pack [label $w.f1.adblocationlabel -text "ADB_PATH : "] -side left
+    pack [label $w.f1.adblocation -text "$ADB_PATH"] -side left
+    pack [button $w.f1.changeadblocation -text "Change" -command "getAdbPath $w.f1.adblocation"] -side right
+}
+proc showHistoryBrowser {} {
+
+}
+
 pack [button $t.clr -text "Clear Log" -command clearLogView] -side right
 pack [labelframe $t.sources -text "Source" -labelanchor w] -side left
 
@@ -1001,8 +1035,9 @@ proc getModel {device} {
 proc getDevices {} {
   global Devices ADB_PATH
   set devices ""
-  if {[getAdbPath] == -1} {
-    return
+  if {![checkAdbPath]} {
+      getAdbPath
+      return
   }
   foreach line [lrange [split [exec $ADB_PATH devices -l] \n] 1 end] {
       set serial [lindex $line 0]
@@ -1235,11 +1270,12 @@ if {$OS == "Darwin"} {
   }
 }
 
-proc checkAdbPath {{w ""} {sdk_path ""} args} {
+proc checkAdbPath {{w ""} {w2 ""} args} {
     global SDK_PATH ADB_PATH
-    puts "sdk_path $sdk_path mm $args"
+    puts "checkAdbPath $args"
     set status "Not confirmed"
     set statusSdk $status
+    set statusConst 0;# NOT_CONFIRMED
     set bgAdb red
     set bgSdk $bgAdb
     set laterEnabled normal
@@ -1265,6 +1301,7 @@ proc checkAdbPath {{w ""} {sdk_path ""} args} {
     }
     if {[file executable $ADB_PATH]} {
         set status "confirmed"
+        set statusConst 1;# CONFIRMED
         set bgAdb green
 	set laterEnabled disabled
 	updateSourceList
@@ -1274,16 +1311,14 @@ proc checkAdbPath {{w ""} {sdk_path ""} args} {
        $w.statussdk.val config -text "$statusSdk: \"$SDK_PATH\"" -bg $bgSdk
        $w.later config -state $laterEnabled
     }
-    return $status
+    if [winfo exist $w2] {
+       $w2 config -text "$status: \"$ADB_PATH\"" -bg $bgAdb
+    }
+    return $statusConst
 }
 
-proc getAdbPath {} {
+proc getAdbPath {{w2 "none"}} {
     global SDK_PATH NO_ADB
-    set status [checkAdbPath]
-    if {$status == "confirmed"} {
-       puts "ADB_PATH already confirmed."
-       return 0
-    }
     set w .sdkpath
     toplevel $w
     wm title $w "Setup ADB_PATH"
@@ -1291,9 +1326,9 @@ proc getAdbPath {} {
     wm minsize $w 500 140
     wm maxsize $w 9000 140
     # after 100 grab set -global $w
-    wm protocol $w WM_DELETE_WINDOW "setTraceAdbPath $w 0; destroy $w"
+    wm protocol $w WM_DELETE_WINDOW "setTraceAdbPath $w $w2 0; destroy $w"
     pack [frame $w.btm -relief raised] -side bottom
-    pack [button $w.btm.close -text Close -command "setTraceAdbPath $w 0; destroy $w"] -side right
+    pack [button $w.btm.close -text Close -command "setTraceAdbPath $w $w2 0; destroy $w"] -side right
     pack [label  $w.msg -text "Please locate \"adb including directory\" or \"Android SDK directory\"."]
     pack [set wi [frame  $w.inputarea -relief ridge]] -fill x -expand yes
     pack [button  $wi.browse -text browse \
@@ -1302,24 +1337,23 @@ proc getAdbPath {} {
     pack [entry  $wi.path -textvariable SDK_PATH] -expand yes -fill x
     pack [set ws1 [frame  $w.statusadb -relief ridge]] -fill x -expand yes
     pack [label $ws1.msg -text "status of adb path:"] -side left
-    pack [label $ws1.val -text "$status"] -side left
+    pack [label $ws1.val] -side left
     pack [set ws2 [frame  $w.statussdk -relief ridge]] -fill x -expand yes
     pack [label $ws2.msg -text "status of SDK path:"] -side left
-    pack [label $ws2.val -text "$status"] -side left
+    pack [label $ws2.val] -side left
     pack [checkbutton $w.later -text "Setup ADB_PATH Later" -variable NO_ADB] -side bottom
-    set SDK_PATH ""
-    set ADB_PATH ""
+#   set SDK_PATH ""
+#   set ADB_PATH ""
     checkAdbPath $w
-    setTraceAdbPath $w 1
-    return -1
+    setTraceAdbPath $w $w2 1
 }
 
-proc setTraceAdbPath {w on} {
+proc setTraceAdbPath {w w2 on} {
   global SDK_PATH
   if {$on} {
-      trace variable SDK_PATH w "after 1000 checkAdbPath $w"
+      trace variable SDK_PATH w "after 1000 checkAdbPath $w $w2"
   } else {
-      trace vdelete  SDK_PATH w "after 1000 checkAdbPath $w"
+      trace vdelete  SDK_PATH w "after 1000 checkAdbPath $w $w2"
   }
 }
 
@@ -1329,6 +1363,10 @@ onlyFocusEntry
 #wVector . 1 "config -takefocus"
 #detectDevices
 if {!$NO_ADB} {
+    if {[checkAdbPath]} {
+       puts "ADB_PATH already confirmed."
+       return
+    }
     getAdbPath
 }
 
