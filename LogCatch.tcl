@@ -765,8 +765,14 @@ getLogType
 set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && /$LevelFilter/ $lvlAndOr /$xiFilter/ {print}{fflush()}\" $LoadFile" r]
       set title [file tail $Device]
     } else {
-	set model  [lindex [split $Device :] 0]
-	set device [lindex [split $Device :] 1]
+        set splitname [split $Device :]
+	set model  [lindex $splitname 0]
+	set device [lindex $splitname 1]
+	set port [lindex $splitname 2]
+        if {$port != ""} {
+            append device ":$port"
+        }
+puts device$device
 set LogType time
 reloadProc
 set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && /$LevelFilter/ $lvlAndOr /$xiFilter/ {print}{fflush()}\" " r]
@@ -1188,9 +1194,16 @@ proc updateSourceList {} {
   foreach device [lrange $Devices 0 2] {
     set seriallow [getSerial $device 1]
     set serialraw [getSerial $device]
-    set model  [lindex [split $device :] 0]
-puts "se: $serialraw  device: $device"
-    set name "$model:[string range $serialraw 0 3]"
+    set splitname [split $device :]
+    set model  [lindex $splitname 0]
+    set port  [lindex $splitname 2]
+puts "serial raw: $serialraw low: $seriallow device: $device"
+    if {$port != ""} {
+        set name "$model:$serialraw"
+        set seriallow [regsub -all {\.} $serialraw {_}]
+    } else {
+        set name "$model:[string range $serialraw 0 3]"
+    }
     pack [radiobutton .top.sources.$seriallow -variable Device -value $device -command loadDevice -text $name] -side left
   }
   if {$dlen > 3} {
