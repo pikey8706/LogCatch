@@ -99,7 +99,7 @@ pack [button .b.b -text Editor -command openEditor] -side left
 
 # top menu
 menu .mbar
-. config -menu .mbar
+#. config -menu .mbar
 # File menu
 menu .mbar.f -tearoff 0
 .mbar.f add command -label About -command "showAbout" -underline 0
@@ -141,8 +141,8 @@ proc menuLogcatch {w} {
     menu $m -tearoff 0
     $m add command -label About -command "showAbout"
     $m add command -label Preferences -command "showPreferences"
-    $m add separator
-    $m add command -label HistoryBrowser -command "showHistoryBrowser"
+#    $m add separator
+#    $m add command -label HistoryBrowser -command "showHistoryBrowser"
     $m add separator
     $m add command -label Quit -command "safeQuit"
     set x [expr [winfo rootx $w] - [winfo width $w]]
@@ -166,7 +166,7 @@ proc showHistoryBrowser {} {
 
 }
 
-pack [button $t.clr -text "Clear Log" -command clearLogView] -side right
+#pack [button $t.clr -text "Clear Log" -command clearLogView -padx 20] -side right
 pack [labelframe $t.sources -text "Source" -labelanchor w] -side left
 
 # pane
@@ -236,6 +236,7 @@ bind $fsrch.e <Shift-Return> "searchAuto $r.l $fsrch.e -r"
 #pack [entry $fsrch.3 -textvariable s3Word] -side left -fill x
 #pack [entry $fsrch.4 -textvariable s4Word] -side left -fill x
 #pack [entry $fsrch.5 -textvariable s5Word] -side left -fill x
+pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -padx 100 -side right
 
 # entry
 #pack [entry .p.rf.e ] -fill x
