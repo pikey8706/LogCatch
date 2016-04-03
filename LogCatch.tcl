@@ -1091,8 +1091,14 @@ proc getProcessPackageList {} {
     global ADB_PATH Device
     set lists ""
     if {![string match "file:*" $Device]} {
-puts D:$Device
-        set serial [getSerial $Device]
+        set splitname [split $Device :]
+        set model  [lindex $splitname 0]
+        set serial [lindex $splitname 1]
+        set port  [lindex $splitname 2]
+        puts "ppl device: $Device"
+        if {$port != ""} {
+            append serial ":$port"
+        }
         if {$serial != ""} {
 	    foreach {pId pkgName uName} [exec $ADB_PATH -s $serial shell ps | awk "/^u0|^app/ {print \$2, \$9, \$1}"] {
 		lappend lists "$pId $pkgName"
@@ -1232,11 +1238,16 @@ proc listOtherDevices {w} {
     }
     menu $m -tearoff 0
     foreach device [lrange $Devices 3 end] {
-      set seriallow [getSerial $device 1]
       set serialraw [getSerial $device]
-      set model  [lindex [split $device :] 0]
+      set splitname [split $device :]
+      set model [lindex $splitname 0]
+      set port [lindex $splitname 2]
       puts "se: $serialraw  device: $device"
-      set name "$model:[string range $serialraw 0 3]"
+      if {$port != ""} {
+          set name "$model:$serial"
+      } else {
+          set name "$model:[string range $serialraw 0 3]"
+      }
       $m add radiobutton -label $name -value $device -variable Device -command loadDevice
     }
     set x [expr [winfo rootx $w] + [winfo width $w]]
