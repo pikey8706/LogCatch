@@ -58,6 +58,9 @@ set Editor ""
 # Clear Auto
 set ClearAuto none
 
+# Menu Face
+set MenuFace bar
+
 proc setEditor {} {
     global Editor OS
     # first check EDITOR env
@@ -99,10 +102,15 @@ pack [button .b.b -text Editor -command openEditor] -side left
 
 # top menu
 menu .mbar
-#. config -menu .mbar
+if {$MenuFace == "bar"} {
+    . config -menu .mbar
+}
 # File menu
 menu .mbar.f -tearoff 0
 .mbar.f add command -label About -command "showAbout" -underline 0
+.mbar.f add separator
+.mbar.f add command -label Preferences -command "showPreferences" -underline 0
+.mbar.f add separator
 .mbar.f add command -label Quit -command "safeQuit" -underline 0
 .mbar add cascade -menu .mbar.f -label $AppName -underline 0
 
@@ -140,8 +148,8 @@ proc menuLogcatch {w} {
     }
     menu $m -tearoff 0
     $m add command -label About -command "showAbout"
+    $m add separator
     $m add command -label Preferences -command "showPreferences"
-#    $m add separator
 #    $m add command -label HistoryBrowser -command "showHistoryBrowser"
     $m add separator
     $m add command -label Quit -command "safeQuit"
@@ -149,8 +157,9 @@ proc menuLogcatch {w} {
     set y [winfo rooty $w]
     tk_popup $m $x $y
 }
+
 proc showPreferences {} {
-    global ADB_PATH
+    global ADB_PATH MenuFace
     set w .preferences
     toplevel $w
     wm title $w "Preferences"
@@ -161,7 +170,16 @@ proc showPreferences {} {
     pack [label $w.f1.adblocationlabel -text "ADB_PATH : "] -side left
     pack [label $w.f1.adblocation -text "$ADB_PATH"] -side left
     pack [button $w.f1.changeadblocation -text "Change" -command "getAdbPath $w.f1.adblocation"] -side right
+    pack [frame $w.f2] -fill x
+#    pack [label $w.f2.menubarormenubutton -text "Menu: "] -side left
+#    pack [radiobutton $w.f2.menubar -text "Menubar" -value bar -variable MenuFace] -side left
+#    pack [radiobutton $w.f2.menubutton -text "MenuButton" -value button -variable MenuFace -command "changeMenuFace"] -side left
 }
+
+proc changeMenuFace {args} {
+    global MenuFace
+}
+
 proc showHistoryBrowser {} {
 
 }
