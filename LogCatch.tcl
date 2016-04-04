@@ -59,7 +59,7 @@ set Editor ""
 set ClearAuto none
 
 # Menu Face
-set MenuFace bar
+set MenuFace bar; # bar button both
 
 proc setEditor {} {
     global Editor OS
@@ -102,9 +102,8 @@ pack [button .b.b -text Editor -command openEditor] -side left
 
 # top menu
 menu .mbar
-if {$MenuFace == "bar"} {
-    . config -menu .mbar
-}
+. config -menu .mbar
+
 # File menu
 menu .mbar.f -tearoff 0
 .mbar.f add command -label About -command "showAbout" -underline 0
@@ -139,7 +138,8 @@ set t [frame .top ];#-bg pink]
 pack $t -side top -fill x
 #pack [button $t.rec -text Rec] -side left
 #image create photo menu_icon -file menu.png
-pack [button $t.menu -text Menus -command "menuLogcatch $t.menu"] -side right;# -image menu_icon
+button $t.menu -text Menus -command "menuLogcatch $t.menu" ;# -image menu_icon
+
 proc menuLogcatch {w} {
     global 
     set m .logcatchmenu
@@ -171,13 +171,24 @@ proc showPreferences {} {
     pack [label $w.f1.adblocation -text "$ADB_PATH"] -side left
     pack [button $w.f1.changeadblocation -text "Change" -command "getAdbPath $w.f1.adblocation"] -side right
     pack [frame $w.f2] -fill x
-#    pack [label $w.f2.menubarormenubutton -text "Menu: "] -side left
-#    pack [radiobutton $w.f2.menubar -text "Menubar" -value bar -variable MenuFace] -side left
-#    pack [radiobutton $w.f2.menubutton -text "MenuButton" -value button -variable MenuFace -command "changeMenuFace"] -side left
+    pack [label $w.f2.menubarormenubutton -text "Menu Face: "] -side left
+    pack [radiobutton $w.f2.menubar -text "Menubar" -value bar -variable MenuFace -command "changeMenuFace"] -side left
+    pack [radiobutton $w.f2.menubutton -text "MenuButton" -value button -variable MenuFace -command "changeMenuFace"] -side left
 }
 
 proc changeMenuFace {args} {
     global MenuFace
+    if {$MenuFace == "bar"} {
+        . config -menu .mbar
+        pack forget .top.menu
+    } elseif {$MenuFace == "button"} {
+        . config -menu ""
+        pack .top.menu -side right
+    } elseif {$MenuFace == "both"} {
+        # button case.
+        . config -menu .mbar
+        pack .top.menu -side right
+    }
 }
 
 proc showHistoryBrowser {} {
@@ -651,7 +662,7 @@ proc loadPreference {} {
 }
 
 proc saveLastState {} {
-    global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB
+    global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
     if {! [file isdirectory $dir]} {
@@ -686,13 +697,15 @@ proc saveLastState {} {
 	    puts $fdW $ADB_PATH
 	    puts $fdW ":NO_ADB"
 	    puts $fdW $NO_ADB
+            puts $fdW ":MenuFace"
+            puts $fdW $MenuFace
 	    puts $fdW ":"
         close $fdW
     }
 }
 
 proc loadLastState {} {
-    global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB
+    global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
     if {! [file isdirectory $dir]} {
@@ -727,6 +740,8 @@ proc loadLastState {} {
 		      set flag 9
                    } elseif {[string match ":NO_ADB" $line]} {
 		      set flag 10
+                   } elseif {[string match ":MenuFace" $line]} {
+		      set flag 11
                    } else {
 		      set flag 0
                    }
@@ -750,6 +765,8 @@ proc loadLastState {} {
 		   set ADB_PATH $line
                 } elseif {$flag == 10} { 
 		   set NO_ADB $line
+                } elseif {$flag == 11} { 
+		   set MenuFace $line
 		} else {
                 }
         }
@@ -757,6 +774,7 @@ proc loadLastState {} {
 	updateLoadedFiles
 	changeWrapMode
 	changeEncoding
+        changeMenuFace
     }
 }
 
