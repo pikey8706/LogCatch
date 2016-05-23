@@ -778,10 +778,6 @@ proc loadLastState {} {
     }
 }
 
-proc getLogType {} {
-    global LoadFile
-}
-
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
 	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel EOFLabel
@@ -798,8 +794,15 @@ proc openSource {} {
     }
     set title $Device
     if {[string match "file:*" $Device]} {
-getLogType
-set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && /$LevelFilter/ $lvlAndOr /$xiFilter/ {print}{fflush()}\" $LoadFile" r]
+      set lvlstate normal
+      if {$LogType == "raw"} {
+         set lvlAndOr "||"
+         set lvlstate disabled
+      }
+      foreach w {v d i w e andor} {
+        .p.rf.hks.${w} config -state $lvlstate
+      }
+ set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && (/$LevelFilter/ $lvlAndOr /$xiFilter/) {print}{fflush()}\" $LoadFile" r]
       set title [file tail $Device]
     } else {
         set splitname [split $Device :]
@@ -809,10 +812,10 @@ set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && /$LevelFilter/ $lvlAndOr /$
         if {$port != ""} {
             append device ":$port"
         }
-puts device$device
-set LogType time
-reloadProc
-set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && /$LevelFilter/ $lvlAndOr /$xiFilter/ {print}{fflush()}\" " r]
+        puts device\ $device
+        set LogType time
+        reloadProc
+set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$LevelFilter/ $lvlAndOr /$xiFilter/) {print}{fflush()}\" " r]
     }
     puts "src: $Device fd: $Fd  eFilter: $eFilter => $xeFilter <> ifilter: $iFilter => $xiFilter LevelFilter => $LevelFilter $lvlAndOr"
     $statusTwo config -text $ReadingLabel -fg "#15b742"
