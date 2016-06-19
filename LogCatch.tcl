@@ -1161,7 +1161,7 @@ proc showProcessList {w} {
     $m add separator
     set lists [getProcessPackageList]
     set cnt 0
-    set mod 19
+    set mod 31
     set mx $m.plist
     foreach alist $lists {
 	incr cnt
