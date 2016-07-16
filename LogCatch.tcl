@@ -38,6 +38,7 @@ set ReadingLabel "Reading..."
 set EOFLabel "End Of File"
 set Encoding $CONST_ENCODING
 set ProcessFilters ""
+set ProcessFilterList ""
 
 # Filter
 set eFilter ""
@@ -88,7 +89,7 @@ wm protocol . WM_DELETE_WINDOW safeQuit
 # Encoding
 encoding system $Encoding
 # bottom status line
-frame .b -relief sunken;# -bg "#00eeee"
+frame .b -relief sunken
 pack .b -side bottom -fill x
 pack [label .b.1 -text "0" -relief sunken] -side left
 pack [label .b.2 -text $EOFLabel -relief sunken -fg red] -side left
@@ -235,7 +236,9 @@ pack [checkbutton $hks.i -text I -command "changeLevel I" -variable LogLevel(I)]
 pack [checkbutton $hks.w -text W -command "changeLevel W" -variable LogLevel(W)] -side left
 pack [checkbutton $hks.e -text E -command "changeLevel E" -variable LogLevel(E)] -side left
 pack [checkbutton $hks.andor -textvariable LevelAndOr -variable LevelAndOr -offvalue "or" -onvalue "and"] -side left -padx 20
-pack [button $hks.process -text "Process none" -command "after 0 showProcessList $hks.process"] -side left -padx 30
+set wProcessFilter $hks.process
+pack [button $wProcessFilter -text "Process none" -command "after 0 showProcessList $wProcessFilter"] -side left -padx 30
+$wProcessFilter config -state disabled
 
 # Filter entry
 set filsi [frame .p.rf.filsi];# -bg lightblue
@@ -780,7 +783,7 @@ proc loadLastState {} {
 
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
-	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel EOFLabel
+	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterList wProcessFilter
     closeFd
     set deny "!"
     set xiFilter [escapeSlash "$iFilter"]
@@ -794,6 +797,7 @@ proc openSource {} {
     }
     set title $Device
     if {[string match "file:*" $Device]} {
+      $wProcessFilter config -text "Process none"
       set lvlstate normal
       if {$LogType == "raw"} {
          set lvlAndOr "||"
@@ -805,6 +809,8 @@ proc openSource {} {
  set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && (/$LevelFilter/ $lvlAndOr /$xiFilter/) {print}{fflush()}\" $LoadFile" r]
       set title [file tail $Device]
     } else {
+        $wProcessFilter config -text "Process $ProcessFilterList"
+        $wProcessFilter config -state normal
         set splitname [split $Device :]
 	set model  [lindex $splitname 0]
 	set device [lindex $splitname 1]
@@ -815,7 +821,7 @@ proc openSource {} {
         puts device\ $device
         set LogType time
         reloadProc
-set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$LevelFilter/ $lvlAndOr /$xiFilter/) {print}{fflush()}\" " r]
+set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterList/ && /$LevelFilter/ $lvlAndOr /$xiFilter/) {print}{fflush()}\" " r]
     }
     puts "src: $Device fd: $Fd  eFilter: $eFilter => $xeFilter <> ifilter: $iFilter => $xiFilter LevelFilter => $LevelFilter $lvlAndOr"
     $statusTwo config -text $ReadingLabel -fg "#15b742"
@@ -831,12 +837,13 @@ puts "$Fd null"
 }
 
 proc closeFd {} {
-    global Fd
+    global Fd wProcessFilter
     if {$Fd != ""} {
         fconfigure $Fd -blocking 0
 	close $Fd
 	set Fd ""
     }
+    $wProcessFilter config -state disabled
 }
 
 proc searchWordAll {w dir wentry} {
@@ -1188,7 +1195,7 @@ proc showProcessList {w} {
 }
 
 proc processFilter {w action {alist ""}} {
-  global ProcessFilters
+  global ProcessFilters ProcessFilterList
   puts "processFilter $action $alist"
   if {"$action" == "clear"} {
     set ProcessFilters ""
@@ -1201,14 +1208,16 @@ proc processFilter {w action {alist ""}} {
        lappend ProcessFilters "$alist"
     }
   }
+  set ProcessFilterList ""
   set plist ""
-  $w config -text "Process none"
   if {$ProcessFilters != ""} {
-     foreach onep $ProcessFilters {
-       append plist "|[lindex $onep 0]"
-     }
-     $w config -text "Process [string range $plist 1 end]"
+    foreach onep $ProcessFilters {
+      append plist "|[lindex $onep 0]"
+    }
+    set ProcessFilterList [string range $plist 1 end]
   }
+  $w config -text "Process $ProcessFilterList"
+puts "pfilter $ProcessFilterList"
 }
 
 proc showHistoryList {w} {
@@ -1434,4 +1443,5 @@ if {!$NO_ADB} {
     getAdbPath
 }
 
-getProcessPackageList
+#getProcessPackageList
+
