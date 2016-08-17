@@ -51,7 +51,7 @@ set pIndex 0.0
 set sDir -forward
 set sCnt 0
 # Update
-set updateTask ""
+set trackTailTask ""
 
 # Editor
 set Editor ""
@@ -396,7 +396,7 @@ proc logcat {{clear 1} fd {doFilter 0}} {
 }
 
 proc readLine {fd} {
-     global logview LineCount statusOne statusTwo MaxRow TrackTail updateTask EndLabel EOFLabel
+     global logview LineCount statusOne statusTwo MaxRow TrackTail trackTailTask EndLabel EOFLabel
      $logview config -state normal
      if {[eof $fd]} {
          #$logview insert end $EndLabel colorBlk
@@ -422,15 +422,15 @@ proc readLine {fd} {
 }
 
 proc updateView {} {
-    global updateTask LineCount
-    if {"$updateTask" != ""} {
-	after cancel $updateTask
+    global trackTailTask LineCount
+    if {"$trackTailTask" != ""} {
+	after cancel $trackTailTask
     }
-    set updateTask [after 200 trackTail]
+    set trackTailTask [after 200 trackTail]
+
     # update idletasks
-    if {$LineCount%100 == 0} {
+    if {$LineCount%200 == 0} {
 	update idletasks
- # puts "update idletasks !"
     }
 }
 
@@ -951,11 +951,11 @@ proc addFilter {kind which} {
 }
 
 proc trackTail {} {
-    global logview TrackTail updateTask
+    global logview TrackTail trackTailTask
     if {$TrackTail} {
        $logview see end
     }
-    set updateTask ""
+    set trackTailTask ""
 }
 
 proc clearSearchAll {} {
