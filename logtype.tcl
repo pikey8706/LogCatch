@@ -117,17 +117,17 @@ proc checkLogType {filename} {
 }
 
 proc reloadProc {} {
-    global LogType
+    global LogType runDir
     if {"$LogType" == "raw"} {
-	source readLog_raw.tcl
+	source $runDir/readLog_raw.tcl
     } elseif {"$LogType" == "time"} {
-	source readLog_time.tcl
+	source $runDir/readLog_time.tcl
     } elseif {"$LogType" == "time_eclipse"} {
-	source readLog_time_eclipse.tcl
+	source $runDir/readLog_time_eclipse.tcl
     } elseif {"$LogType" == "studio"} {
-	source readLog_studio.tcl
+	source $runDir/readLog_studio.tcl
     } elseif {"$LogType" == "long"} {
-	source readLog_long.tcl
+	source $runDir/readLog_long.tcl
     }
     puts "reload proc readLog for logtype: $LogType"
 }

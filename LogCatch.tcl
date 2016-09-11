@@ -2,6 +2,13 @@
 # \
 exec wish "$0" -- "$@"
 
+set runDir [pwd]
+foreach {opt val} $argv {
+  if {"$opt" == "--dir"} {
+     set runDir $val
+  }
+}
+
 # globals
 set AppName "LogCatch"
 set SDK_PATH "$env(HOME)"
@@ -84,7 +91,7 @@ proc setEditor {} {
 wm deiconify .
 wm title . $AppName
 wm protocol . WM_DELETE_WINDOW safeQuit
-#image create photo app_icon -file icon.png
+#image create photo app_icon -file lc_icon.gif
 #wm iconphoto . app_icon
 # Encoding
 encoding system $Encoding
@@ -138,11 +145,10 @@ menu .mbar.i.f
 set t [frame .top ];#-bg pink]
 pack $t -side top -fill x
 #pack [button $t.rec -text Rec] -side left
-#image create photo menu_icon -file menu.png
+#image create photo menu_icon -file menu.gif
 button $t.menu -text Menus -command "menuLogcatch $t.menu" ;# -image menu_icon
 
 proc menuLogcatch {w} {
-    global 
     set m .logcatchmenu
     if {[winfo exist $m]} {
       destroy $m
@@ -434,7 +440,7 @@ proc updateView {} {
     }
 }
 
-source logtype.tcl
+source $runDir/logtype.tcl
 
 proc loadFile {{filename ""}} {
     global Fd PrevLoadFile LoadFile LoadedFiles Device LogType
@@ -522,7 +528,7 @@ puts "changeWrapMode $WrapMode"
 wrapMenu
 
 proc encodingMenu {} {
-  global Encoding Codes
+  global Encoding Codes runDir
   set defaultCode "utf-8"
   set lists [lsort [encoding names]]
   set defIdx [lsearch $lists $defaultCode]
@@ -532,7 +538,7 @@ proc encodingMenu {} {
      $m add radiobutton -label "Default: $defaultCode" -value $defaultCode -variable Encoding -command changeEncoding
      $m add separator
   }
-  source ./codes.tcl
+  source $runDir/codes.tcl
   set group [lsort [array names Codes]]
   foreach one $group {
     set gmenu $m.[string tolower $one]
