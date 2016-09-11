@@ -46,6 +46,7 @@ set EOFLabel "End Of File"
 set Encoding $CONST_ENCODING
 set ProcessFilters ""
 set ProcessFilterList ""
+set TagFilter ""
 
 # Filter
 set eFilter ""
@@ -245,6 +246,9 @@ pack [checkbutton $hks.andor -textvariable LevelAndOr -variable LevelAndOr -offv
 set wProcessFilter $hks.process
 pack [button $wProcessFilter -text "Process none" -command "after 0 showProcessList $wProcessFilter"] -side left -padx 30
 $wProcessFilter config -state disabled
+pack [label $hks.taglbl -text "TagFilter: "] -side left
+pack [entry $hks.tagent -textvariable TagFilter] -side left
+bind $hks.tagent <Return> openSource
 
 # Filter entry
 set filsi [frame .p.rf.filsi];# -bg lightblue
@@ -671,7 +675,8 @@ proc loadPreference {} {
 }
 
 proc saveLastState {} {
-    global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace
+    global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace \
+TagFilter
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
     if {! [file isdirectory $dir]} {
@@ -708,17 +713,19 @@ proc saveLastState {} {
 	    puts $fdW $NO_ADB
             puts $fdW ":MenuFace"
             puts $fdW $MenuFace
+            puts $fdW ":TagFilter"
+            puts $fdW $TagFilter
 	    puts $fdW ":"
         close $fdW
     }
 }
 
 proc loadLastState {} {
-    global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace
+    global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace TagFilter
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
     if {! [file isdirectory $dir]} {
-            exec mkdir -p $dir
+	    exec mkdir -p $dir
     }
     if {! [file isdirectory $dir]} {
             return
@@ -751,6 +758,8 @@ proc loadLastState {} {
 		      set flag 10
                    } elseif {[string match ":MenuFace" $line]} {
 		      set flag 11
+                   } elseif {[string match ":TagFilter" $line]} {
+		      set flag 12
                    } else {
 		      set flag 0
                    }
@@ -776,6 +785,8 @@ proc loadLastState {} {
 		   set NO_ADB $line
                 } elseif {$flag == 11} { 
 		   set MenuFace $line
+                } elseif {$flag == 12} { 
+		   set TagFilter $line
 		} else {
                 }
         }
@@ -789,7 +800,7 @@ proc loadLastState {} {
 
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
-	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterList wProcessFilter
+	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterList wProcessFilter TagFilter
     closeFd
     set deny "!"
     set xiFilter [escapeSlash "$iFilter"]
@@ -812,7 +823,7 @@ proc openSource {} {
       foreach w {v d i w e andor} {
         .p.rf.hks.${w} config -state $lvlstate
       }
- set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && (/$LevelFilter/ $lvlAndOr /$xiFilter/) {print}{fflush()}\" $LoadFile" r]
+ set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && (/$LevelFilter/ $lvlAndOr (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" $LoadFile" r]
       set title [file tail $Device]
     } else {
         $wProcessFilter config -text "Process $ProcessFilterList"
@@ -827,7 +838,7 @@ proc openSource {} {
         puts device\ $device
         set LogType time
         reloadProc
-set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterList/ && /$LevelFilter/ $lvlAndOr /$xiFilter/) {print}{fflush()}\" " r]
+set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterList/ && /$LevelFilter/ $lvlAndOr  (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
     }
     puts "src: $Device fd: $Fd  eFilter: $eFilter => $xeFilter <> ifilter: $iFilter => $xiFilter LevelFilter => $LevelFilter $lvlAndOr"
     $statusTwo config -text $ReadingLabel -fg "#15b742"
