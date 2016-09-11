@@ -58,6 +58,16 @@ set sIndex 1.0
 set pIndex 0.0
 set sDir -forward
 set sCnt 0
+# Highlight
+set hWord1 ""
+set hWord1Color "#ff7777"
+set hWord1Cnt ""
+set hWord2 ""
+set hWord2Color "#ff7777"
+set hWord2Cnt ""
+set hWord3 ""
+set hWord3Color "#ff7777"
+set hWord3Cnt ""
 # Update
 set trackTailTask ""
 
@@ -263,6 +273,7 @@ pack [entry $filse.ee -textvariable eFilter] -side left -fill x -expand y
 pack [button $filse.be -text Clear -command "set eFilter \"\"" -takefocus 0] -side right
 bind $filsi.ei <Return> "updateFilter $filsi.ei $filse.ee"
 bind $filse.ee <Return> "updateFilter $filsi.ei $filse.ee"
+# Search
 set fsrch [frame .p.rf.search];# -bg lightblue
 pack $fsrch -fill x
 pack [label $fsrch.l -text "Search:"] -side left
@@ -274,10 +285,21 @@ pack [button $fsrch.p -text "Prev" -command "searchWordAll $r.l -backward $fsrch
 pack [button $fsrch.x -text "Clear" -command "clearSearchAll"] -side left
 bind $fsrch.e <Return> "searchAuto $r.l $fsrch.e"
 bind $fsrch.e <Shift-Return> "searchAuto $r.l $fsrch.e -r"
+bind . <Control-f> "focus $fsrch.e"
 #pack [entry $fsrch.2 -textvariable s2Word] -side left -fill x
 #pack [entry $fsrch.3 -textvariable s3Word] -side left -fill x
 #pack [entry $fsrch.4 -textvariable s4Word] -side left -fill x
 #pack [entry $fsrch.5 -textvariable s5Word] -side left -fill x
+# Highlight
+pack [label $fsrch.highlight -text "Hightlight:"] -side left
+pack [entry $fsrch.hword1 -textvariable hWord1 -bg lightblue] -side left
+pack [entry $fsrch.hword2 -textvariable hWord2 -bg lightgreen] -side left
+pack [entry $fsrch.hword3 -textvariable hWord3 -bg pink] -side left
+bind $fsrch.hword1 <Return> "highlightWord $r.l $fsrch.hword1 colorLbl"
+bind $fsrch.hword2 <Return> "highlightWord $r.l $fsrch.hword2 colorLgr"
+bind $fsrch.hword3 <Return> "highlightWord $r.l $fsrch.hword3 colorPnk"
+
+# Clear Log
 pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -padx 100 -side right
 
 # entry
@@ -311,6 +333,8 @@ $logview tag config colorPnk -background pink
 $logview tag config colorPup -background purple -foreground white -relief raised
 # search highlight colors 
 $logview tag config colorWht -background white
+$logview tag config colorLbl -background lightblue -foreground black
+$logview tag config colorLgr -background lightgreen -foreground black
 global tags
 set tags [list colorBlk colorBlu colorGre colorOrg colorRed]
 
@@ -944,6 +968,33 @@ proc searchAuto {w wentry {reverse ""}} {
        }
     }
     searchWordAll $w $sDir $wentry
+}
+
+proc highlightWord {w wentry colorTag} {
+  set word [$wentry get]
+  if {$word == ""} {
+#       clearSearchAll
+      return
+  }
+  set sCnt 0
+  set len [string length $word]
+  set index 0.0
+  set idx0 [$w search -forward $word $index]
+  set index $idx0
+  while {$index != ""} {
+      set s [lindex [split $index "."] 0]
+      set e [lindex [split $index "."] 1]
+      incr sCnt
+      incr e $len
+      $w tag add $colorTag $index $s.$e
+      set index [$w search -forward $word $s.$e]
+      if {$index == $idx0} { break }
+  }
+  if {$sCnt} {
+     set sWord $word
+     # .p.rf.search.cnt config -text $cnt
+     puts "high: $sCnt"
+  }
 }
 
 proc initFilter {} {
