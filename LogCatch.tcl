@@ -280,9 +280,9 @@ bind $filse.ee <Return> "updateFilter $filsi.ei $filse.ee"
 set fsrch [frame .p.rf.search];# -bg lightblue
 pack $fsrch -fill x
 pack [label $fsrch.l -text "Search:"] -side left
-pack [entry $fsrch.e -textvariable ssWord] -side left -fill x
+pack [entry $fsrch.e -textvariable ssWord -width 20] -side left -fill x
 pack [button $fsrch.n -text "Next"  -command "searchWordAll $r.l -forward  $fsrch.e"] -side left
-pack [entry $fsrch.idx -textvariable sIdx -width 3] -side left
+pack [label $fsrch.idx -textvariable sIdx] -side left
 pack [label $fsrch.cnt -textvariable sCnt] -side left
 pack [button $fsrch.p -text "Prev" -command "searchWordAll $r.l -backward $fsrch.e"] -side left
 pack [button $fsrch.x -text "Clear" -command "clearSearchAll"] -side left
