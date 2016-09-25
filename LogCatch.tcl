@@ -122,7 +122,10 @@ pack [button .b.b -text Editor -command openEditor] -side left
 # top menu
 menu .mbar
 . config -menu .mbar
-
+# Apple menu
+# menu .mbar.apple
+# .mbar add cascade -menu .mbar.apple 
+# .mbar.apple add command -label "About my Applications"
 # File menu
 menu .mbar.f -tearoff 0
 .mbar.f add command -label About -command "showAbout" -underline 0
@@ -257,7 +260,7 @@ set wProcessFilter $hks.process
 pack [button $wProcessFilter -text "Process none" -command "after 0 showProcessList $wProcessFilter"] -side left -padx 30
 $wProcessFilter config -state disabled
 pack [label $hks.taglbl -text "TagFilter: "] -side left
-pack [entry $hks.tagent -textvariable TagFilter] -side left
+pack [entry $hks.tagent -textvariable TagFilter -width 50] -side left
 bind $hks.tagent <Return> openSource
 
 # Filter entry
@@ -329,10 +332,10 @@ $logview tag config colorOrg -foreground orange
 $logview tag config colorRed -foreground red
 # search colors
 $logview tag config colorYel -background yellow -foreground black
-$logview tag config colorPnk -background pink
+$logview tag config colorPnk -background pink -foreground black
 $logview tag config colorPup -background purple -foreground white -relief raised
 # search highlight colors 
-$logview tag config colorWht -background white
+$logview tag config colorWht -background white -foreground black
 $logview tag config colorLbl -background lightblue -foreground black
 $logview tag config colorLgr -background lightgreen -foreground black
 global tags
