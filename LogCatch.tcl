@@ -47,6 +47,7 @@ set Encoding $CONST_ENCODING
 set ProcessFilters ""
 set ProcessFilterList ""
 set TagFilter ""
+set LogView ""
 
 # Filter
 set eFilter ""
@@ -310,12 +311,14 @@ pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -padx 100 -side
 
 # logview text/listbox
 if {1} {
+set LogView $r.l
 text $r.l -bg "#000000" -xscrollcommand "$r.s0 set" -yscrollcommand "$r.s1 set" -wrap $WrapMode
 scrollbar $r.s0 -orient horizontal -command "$r.l xview"
 scrollbar $r.s1 -command "$r.l yview"
 #grid $r.l -row 0 -column 0 -sticky nsew
 #grid $r.s0 -row 1 -column 0 -sticky ew
 #grid $r.s1 -row 0 -column 1 -sticky ns
+bind $LogView <1> "focus $LogView"
 } else {
 listbox $r.l -bg "#eeeeee" ;#-width 200
 }
@@ -330,16 +333,18 @@ $logview tag config colorBlu -foreground lightblue
 $logview tag config colorGre -foreground "#15b742"
 $logview tag config colorOrg -foreground orange
 $logview tag config colorRed -foreground red
+global tags
+set tags [list colorBlk colorBlu colorGre colorOrg colorRed]
+
 # search colors
 $logview tag config colorYel -background yellow -foreground black
 $logview tag config colorPnk -background pink -foreground black
-$logview tag config colorPup -background purple -foreground white -relief raised
-# search highlight colors 
+$logview tag config colorPup -background purple -foreground white
+$logview tag config colorOra -background orange -foreground black -relief raised
+# search highlight colors
 $logview tag config colorWht -background white -foreground black
 $logview tag config colorLbl -background lightblue -foreground black
 $logview tag config colorLgr -background lightgreen -foreground black
-global tags
-set tags [list colorBlk colorBlu colorGre colorOrg colorRed]
 
 menu .logmenu -tearoff 0
 .logmenu add command -label "Save all lines" -command "saveLines all"
@@ -898,6 +903,7 @@ proc searchWordAll {w dir wentry} {
        return
     }
     if {$sWord != $word} {
+       clearSearchAll
        set sCnt 0
        set len [string length $word]
        set index 0.0
@@ -942,12 +948,12 @@ proc searchWord {w dir wentry} {
 	set sIdx 0
     } else {
 	set peIndex $ps.[expr $pe + $len]
-        $w tag remove colorPup $pIndex $peIndex
+        $w tag remove colorOra $pIndex $peIndex
 	puts "remove $pIndex $peIndex : $delta"
 	puts "add $index $s.[expr $e + $len]"
 #        $w tag add colorWht $s.0 $s.end
-        $w tag add colorPup $index $s.[expr $e + $len]
-	$w tag raise colorPup
+        $w tag add colorOra $index $s.[expr $e + $len]
+	$w tag raise colorOra
         $w see $index
 	$w see [expr {$toForward ? $s + 5 : $s - 5}].$e
 	# next search starting index
@@ -1030,13 +1036,22 @@ proc trackTail {} {
 }
 
 proc clearSearchAll {} {
-    global logview sWord sIndex sIdx sCnt
+    global logview sWord sIndex sIdx sCnt LogView
     set sIndex 1.0
     set sIdx 0
     set sCnt 0
     set sWord ""
     set sIndex 1.0
     set pIndex 0.0
+    removeAllTag colorYel
+    removeAllTag colorOra
+}
+
+proc removeAllTag {tagName} {
+    global LogView
+    foreach {si ei} [$LogView tag ranges $tagName] {
+        $LogView tag remove $tagName $si $ei
+    }
 }
 
 proc chooseFontsAndColors {} {
@@ -1386,8 +1401,18 @@ proc openEditor {} {
     }
 }
 
-proc selectLines {args} {
+proc selectAlllines {} {
+}
 
+proc selectLines {{opt all}} {
+    global LogView
+    $LogView config -state normal
+    if {"all" == "$opt"} {
+        $LogView tag add sel 1.0 end        
+    }
+    $LogView config -state disabled
+#ttk::button $LogView.b -text "Push Me"
+#$LogView window create 1.0 -window $LogView.b
 }
 
 proc onlyFocusEntry {} {
