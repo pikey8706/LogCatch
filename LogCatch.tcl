@@ -44,6 +44,7 @@ set OS [exec uname -s]
 set ReadingLabel "Reading..."
 set EOFLabel "End Of File"
 set Encoding $CONST_ENCODING
+set ProcessPackageList ""
 set ProcessFilters ""
 set ProcessFilterList ""
 set TagFilter ""
@@ -1223,7 +1224,7 @@ proc detectDevices {} {
 }
 
 proc getProcessPackageList {} {
-    global ADB_PATH Device
+    global ADB_PATH Device ProcessPackageList
     set lists ""
     if {![string match "file:*" $Device]} {
         set splitname [split $Device :]
@@ -1241,7 +1242,28 @@ proc getProcessPackageList {} {
 	}
 	set lists [lsort -integer -index 0 -decr $lists] 
    }
+   set ProcessPackageList $lists
    return $lists
+}
+
+proc updateProcessFilters {} {
+    global ProcessPackageList ProcessFilters ProcessFilterList
+    set pFilters ""
+    foreach p [split $ProcessFilterList "|"] {
+      set idx [lsearch -index 0 $ProcessFilters $p]
+      set alist [lindex $ProcessFilters $idx]
+      set pkg [lindex $alist 1]
+      set pidx [lsearch -index 1 $ProcessPackageList $pkg]
+      if {$pidx >= 0} {
+        set blist [lindex $ProcessPackageList $pidx]
+        lappend pFilters $blist
+        set newP [lindex $blist 0]
+#        append pFilterList "|$newP"
+        puts "updateProcessFilters oldProcess: $p newProcess: $newP newlist: $blist"
+      }
+    }
+    set ProcessFilters $pFilters
+    updateProcessFilterList
 }
 
 proc showProcessList {w} {
@@ -1255,6 +1277,7 @@ proc showProcessList {w} {
     $m add cascade -menu $m.plist -label "Add Process Filter"
     $m add separator
     set lists [getProcessPackageList]
+    updateProcessFilters
     set cnt 0
     set mod 31
     set mx $m.plist
@@ -1296,14 +1319,16 @@ proc processFilter {w action {alist ""}} {
        lappend ProcessFilters "$alist"
     }
   }
-  set ProcessFilterList ""
+  updateProcessFilterList
+}
+
+proc updateProcessFilterList {} {
+  global ProcessFilters ProcessFilterList
   set plist ""
-  if {$ProcessFilters != ""} {
-    foreach onep $ProcessFilters {
-      append plist "|[lindex $onep 0]"
-    }
-    set ProcessFilterList [string range $plist 1 end]
+  foreach onep $ProcessFilters {
+    append plist "|[lindex $onep 0]"
   }
+  set ProcessFilterList [string range $plist 1 end]
   updateProcessFilterStatus normal
 }
 
