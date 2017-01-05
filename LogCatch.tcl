@@ -253,16 +253,16 @@ pack $r -side right -anchor e -fill both -expand yes -padx 5 -pady 5
 
 set hks [frame .p.rf.hks];# -bg lightblue
 pack $hks -fill x
-pack [label $hks.l -text "show level: "] -side left
-pack [checkbutton $hks.v -text V -command "changeLevel V" -variable LogLevel(V)] -side left
-pack [checkbutton $hks.d -text D -command "changeLevel D" -variable LogLevel(D)] -side left
-pack [checkbutton $hks.i -text I -command "changeLevel I" -variable LogLevel(I)] -side left
-pack [checkbutton $hks.w -text W -command "changeLevel W" -variable LogLevel(W)] -side left
-pack [checkbutton $hks.e -text E -command "changeLevel E" -variable LogLevel(E)] -side left
-pack [checkbutton $hks.andor -textvariable LevelAndOr -variable LevelAndOr -offvalue "or" -onvalue "and"] -side left -padx 20
+#pack [label $hks.l -text "show level: "] -side left
+#pack [checkbutton $hks.v -text V -command "changeLevel V" -variable LogLevel(V)] -side left
+#pack [checkbutton $hks.d -text D -command "changeLevel D" -variable LogLevel(D)] -side left
+#pack [checkbutton $hks.i -text I -command "changeLevel I" -variable LogLevel(I)] -side left
+#pack [checkbutton $hks.w -text W -command "changeLevel W" -variable LogLevel(W)] -side left
+#pack [checkbutton $hks.e -text E -command "changeLevel E" -variable LogLevel(E)] -side left
+#pack [checkbutton $hks.andor -textvariable LevelAndOr -variable LevelAndOr -offvalue "or" -onvalue "and"] -side left -padx 20
 set wProcessFilter $hks.process
-pack [button $wProcessFilter -text "Process none" -command "after 0 showProcessList $wProcessFilter"] -side left -padx 30
-$wProcessFilter config -state disabled
+pack [label $hks.labelprocess -text "Process Filter: "] -side left
+pack [button $wProcessFilter -command "after 0 showProcessList $wProcessFilter"] -side left
 pack [label $hks.taglbl -text "TagFilter: "] -side left
 pack [entry $hks.tagent -textvariable TagFilter -width 50] -side left
 bind $hks.tagent <Return> openSource
@@ -835,7 +835,7 @@ proc loadLastState {} {
 
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
-	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterList wProcessFilter TagFilter
+	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterList TagFilter
     closeFd
     set deny "!"
     set xiFilter [escapeSlash "$iFilter"]
@@ -849,20 +849,19 @@ proc openSource {} {
     }
     set title $Device
     if {[string match "file:*" $Device]} {
-      $wProcessFilter config -text "Process none"
+      updateProcessFilterStatus disabled
       set lvlstate normal
       if {$LogType == "raw"} {
          set lvlAndOr "||"
          set lvlstate disabled
       }
-      foreach w {v d i w e andor} {
-        .p.rf.hks.${w} config -state $lvlstate
-      }
- set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && (/$LevelFilter/ $lvlAndOr (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" $LoadFile" r]
+#      foreach w {v d i w e andor} {
+#       .p.rf.hks.${w} config -state $lvlstate
+#      }
+set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && ( (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" $LoadFile" r]
       set title [file tail $Device]
     } else {
-        $wProcessFilter config -text "Process $ProcessFilterList"
-        $wProcessFilter config -state normal
+        updateProcessFilterStatus normal
         set splitname [split $Device :]
 	set model  [lindex $splitname 0]
 	set device [lindex $splitname 1]
@@ -873,7 +872,7 @@ proc openSource {} {
         puts device\ $device
         set LogType time
         reloadProc
-set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterList/ && /$LevelFilter/ $lvlAndOr  (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
+set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterList/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
     }
     puts "src: $Device fd: $Fd  eFilter: $eFilter => $xeFilter <> ifilter: $iFilter => $xiFilter LevelFilter => $LevelFilter $lvlAndOr"
     $statusTwo config -text $ReadingLabel -fg "#15b742"
@@ -889,13 +888,13 @@ puts "$Fd null"
 }
 
 proc closeFd {} {
-    global Fd wProcessFilter
+    global Fd
     if {$Fd != ""} {
         fconfigure $Fd -blocking 0
 	close $Fd
 	set Fd ""
     }
-    $wProcessFilter config -state disabled
+    updateProcessFilterStatus disabled
 }
 
 proc searchWordAll {w dir wentry} {
@@ -1305,8 +1304,24 @@ proc processFilter {w action {alist ""}} {
     }
     set ProcessFilterList [string range $plist 1 end]
   }
-  $w config -text "Process $ProcessFilterList"
-puts "pfilter $ProcessFilterList"
+  updateProcessFilterStatus normal
+}
+
+proc updateProcessFilterStatus {status} {
+  global ProcessFilters ProcessFilterList wProcessFilter
+  set w $wProcessFilter
+puts "updateProcessFilterStatus plist: $ProcessFilterList status: $status"
+  $w config -state $status
+
+  if {$status == "normal"} {
+    set lcnt [llength $ProcessFilterList]
+    if {$lcnt > 0} {
+      set status "$ProcessFilterList"
+    } elseif {$lcnt == 0} {
+      set status "select..."
+    }
+  }
+  $w config -text $status
 }
 
 proc showHistoryList {w} {
@@ -1529,8 +1544,10 @@ proc setTraceAdbPath {w w2 on} {
   }
 }
 
+## init procedures
 loadPreference
 loadLastState
+updateProcessFilterStatus disabled
 onlyFocusEntry
 #wVector . 1 "config -takefocus"
 #detectDevices
@@ -1543,4 +1560,4 @@ if {!$NO_ADB} {
 }
 
 #getProcessPackageList
-
+puts aaa
