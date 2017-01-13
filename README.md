@@ -56,6 +56,8 @@ Assuming you have done installed msys-git.
 <pre>
 wish LogCatch.tcl
 </pre>
+- Or simply double click logcatch.vbs in the folder.
+- Please create shortcut lancher by yourself.
 
 To see log from devices after app launched, do below please.
 - you should select android-sdk-directory or adb including directory from popup window.

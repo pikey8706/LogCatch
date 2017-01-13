@@ -1,0 +1,11 @@
+Please_create_windows_shortcut_lancher_by_yourself !
+
+How to create lancher shortcut.
+
+1. Right click logcatch.vbs
+2. Select menu "create shorct"
+
+optional (icon change):
+3. Right click logcatch.vbs - shortcut.lnk
+4. Select menu "Property"
+5. Change icon from property window
