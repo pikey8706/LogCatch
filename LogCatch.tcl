@@ -316,7 +316,7 @@ pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -padx 100 -side
 # logview text/listbox
 if {1} {
 set LogView $r.l
-text $r.l -bg "#000000" -xscrollcommand "$r.s0 set" -yscrollcommand "$r.s1 set" -wrap $WrapMode -font systemSystemFont
+text $r.l -bg "#000000" -xscrollcommand "$r.s0 set" -yscrollcommand "$r.s1 set" -wrap $WrapMode
 scrollbar $r.s0 -orient horizontal -command "$r.l xview"
 scrollbar $r.s1 -command "$r.l yview"
 #grid $r.l -row 0 -column 0 -sticky nsew
@@ -1480,6 +1480,7 @@ if {$OS == "Darwin"} {
   proc tk::mac::Quit {} {
       safeQuit
   }
+  $LogView config -font systemSystemFont
 }
 
 proc checkAdbPath {{w ""} {w2 ""} args} {
