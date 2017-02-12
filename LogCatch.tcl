@@ -306,12 +306,12 @@ pack [entry $fsrch.hword2 -textvariable hWord2 -bg lightgreen] -side left
 pack [label $fsrch.hword2cnt -text "" -bg lightgreen] -side left
 pack [entry $fsrch.hword3 -textvariable hWord3 -bg pink] -side left
 pack [label $fsrch.hword3cnt -text "" -bg pink] -side left
-pack [entry $fsrch.hword4 -textvariable hWord3 -bg white] -side left
+pack [entry $fsrch.hword4 -textvariable hWord4 -bg white] -side left
 pack [label $fsrch.hword4cnt -text "" -bg white] -side left
 bind $fsrch.hword1 <Return> "highlightWord $r.l $fsrch.hword1 colorLbl"
 bind $fsrch.hword2 <Return> "highlightWord $r.l $fsrch.hword2 colorLgr"
 bind $fsrch.hword3 <Return> "highlightWord $r.l $fsrch.hword3 colorPnk"
-bind $fsrch.hword4 <Return> "highlightWord $r.l $fsrch.hword3 colorWht"
+bind $fsrch.hword4 <Return> "highlightWord $r.l $fsrch.hword4 colorWht"
 set HighlightWord($fsrch.hword1) "$r.l $fsrch.hword1 colorLbl 0 0 0.0"
 set HighlightWord($fsrch.hword2) "$r.l $fsrch.hword2 colorLgr 0 0 0.0"
 set HighlightWord($fsrch.hword3) "$r.l $fsrch.hword3 colorPnk 0 0 0.0"
