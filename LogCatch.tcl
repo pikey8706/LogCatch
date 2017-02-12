@@ -288,7 +288,7 @@ pack [label $fsrch.l -text "Search:"] -side left
 pack [entry $fsrch.e -textvariable ssWord -width 20] -side left -fill x
 pack [button $fsrch.n -text "Next"  -command "searchWordAll $r.l -forward  $fsrch.e"] -side left
 pack [label $fsrch.idx -textvariable sIdx] -side left
-pack [label $fsrch.cnt -textvariable sCnt] -side left
+pack [label $fsrch.ecnt -textvariable sCnt] -side left
 pack [button $fsrch.p -text "Prev" -command "searchWordAll $r.l -backward $fsrch.e"] -side left
 pack [button $fsrch.x -text "Clear" -command "clearSearchAll"] -side left
 bind $fsrch.e <Return> "searchAuto $r.l $fsrch.e"
@@ -301,11 +301,21 @@ bind . <Control-f> "focus $fsrch.e"
 # Highlight
 pack [label $fsrch.highlight -text "Hightlight:"] -side left
 pack [entry $fsrch.hword1 -textvariable hWord1 -bg lightblue] -side left
+pack [label $fsrch.hword1cnt -text "" -bg lightblue] -side left
 pack [entry $fsrch.hword2 -textvariable hWord2 -bg lightgreen] -side left
+pack [label $fsrch.hword2cnt -text "" -bg lightgreen] -side left
 pack [entry $fsrch.hword3 -textvariable hWord3 -bg pink] -side left
+pack [label $fsrch.hword3cnt -text "" -bg pink] -side left
+pack [entry $fsrch.hword4 -textvariable hWord3 -bg white] -side left
+pack [label $fsrch.hword4cnt -text "" -bg white] -side left
 bind $fsrch.hword1 <Return> "highlightWord $r.l $fsrch.hword1 colorLbl"
 bind $fsrch.hword2 <Return> "highlightWord $r.l $fsrch.hword2 colorLgr"
 bind $fsrch.hword3 <Return> "highlightWord $r.l $fsrch.hword3 colorPnk"
+bind $fsrch.hword4 <Return> "highlightWord $r.l $fsrch.hword3 colorWht"
+set HighlightWord($fsrch.hword1) "$r.l $fsrch.hword1 colorLbl 0 0 0.0"
+set HighlightWord($fsrch.hword2) "$r.l $fsrch.hword2 colorLgr 0 0 0.0"
+set HighlightWord($fsrch.hword3) "$r.l $fsrch.hword3 colorPnk 0 0 0.0"
+set HighlightWord($fsrch.hword4) "$r.l $fsrch.hword4 colorWht 0 0 0.0"
 
 # Clear Log
 pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -padx 100 -side right
@@ -983,6 +993,7 @@ proc searchAuto {w wentry {reverse ""}} {
 }
 
 proc highlightWord {w wentry colorTag} {
+  global HighlightWord
   set word [$wentry get]
   if {$word == ""} {
 #       clearSearchAll
@@ -1004,9 +1015,22 @@ proc highlightWord {w wentry colorTag} {
   }
   if {$sCnt} {
      set sWord $word
-     # .p.rf.search.cnt config -text $cnt
-     puts "high: $sCnt"
+     ${wentry}cnt config -text $sCnt
+     set HighlightWord($wentry) "$w $wentry $colorTag 0 $sCnt 0.0"
+     puts "high: $sCnt $word"
   }
+}
+
+proc incrementalHighlight {} {
+    global HighlightWord
+    foreach one [array names HighlightWord] {
+	set wlog [lindex $HighlightWord($one) 0]
+	set went [lindex $HighlightWord($one) 1]
+	set colorTag [lindex $HighlightWord($one) 2]
+	after idle highlightWord $wlog $went $colorTag
+    }
+    # search word all
+    after idle highlightWord $wlog .p.rf.search.e colorYel
 }
 
 proc initFilter {} {
@@ -1036,6 +1060,7 @@ proc trackTail {} {
        $logview see end
     }
     set trackTailTask ""
+    incrementalHighlight
 }
 
 proc clearSearchAll {} {
