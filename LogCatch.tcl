@@ -49,6 +49,7 @@ set ProcessFilters ""
 set ProcessFilterList ""
 set TagFilter ""
 set LogView ""
+set LastLogLevel "V"
 
 # Filter
 set eFilter ""
@@ -416,7 +417,10 @@ proc addCheckBtn {w ww text} {
 }
 
 proc getTag {loglevel} {
-    global tags
+    global tags LogLevels LastLogLevel
+    if {[lsearch $LogLevels $loglevel] == -1 && [lsearch $LogLevels $LastLogLevel] > -1} {
+        set loglevel $LastLogLevel
+    }
     set index 0
     if {$loglevel == "V"} {
     } elseif {$loglevel == "D"} {
@@ -428,6 +432,7 @@ proc getTag {loglevel} {
     } elseif {$loglevel == "E"} {
 	incr index 4
     }
+    set LastLogLevel $loglevel
     return [lindex $tags $index]
 }
 
