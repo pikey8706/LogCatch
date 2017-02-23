@@ -1001,7 +1001,8 @@ proc highlightWord {w wentry colorTag} {
   global HighlightWord
   set word [$wentry get]
   if {$word == ""} {
-#       clearSearchAll
+      removeAllTag $colorTag
+      ${wentry}cnt config -text ""
       return
   }
   set sCnt 0
