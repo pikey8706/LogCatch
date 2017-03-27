@@ -1,4 +1,5 @@
 # threadtime
 proc getLogLevel {line} {
-  return [lindex $line 4]
+    set xline [string map {\" \\" \{ \\{ \} \\}} "$line"]
+    return [lindex $xline 4]
 }

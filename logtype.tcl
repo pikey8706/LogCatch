@@ -23,6 +23,7 @@ proc checkLogType {filename} {
 	set linemax 30
 	while {[gets $rp line] >= 0 && $lcnt <= $linemax} {
 #puts line/$line
+	    set line [string map {\" \\" \{ \\{ \} \\}} "$line"]
 	    if {"$line" != ""} {
 		set second [string index $line 1]
 		if {"$second" == " "} {
@@ -128,6 +129,8 @@ proc reloadProc {} {
 	source $runDir/readLog_studio.tcl
     } elseif {"$LogType" == "long"} {
 	source $runDir/readLog_long.tcl
+    } elseif {"$LogType" == "threadtime"} {
+	source $runDir/readLog_threadtime.tcl
     }
     puts "reload proc readLog for logtype: $LogType"
 }
