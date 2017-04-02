@@ -1067,7 +1067,7 @@ proc addFilter {kind which} {
 proc trackTail {} {
     global logview TrackTail trackTailTask
     if {$TrackTail} {
-       $logview see end
+        after idle $logview see end
     }
     set trackTailTask ""
     incrementalHighlight
