@@ -854,8 +854,8 @@ proc openSource {} {
 	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterList TagFilter
     closeFd
     set deny "!"
-    set xiFilter [escapeSlash "$iFilter"]
-    set xeFilter [escapeSlash "$eFilter"]
+    set xiFilter [checkEscapeAll [escapeSlash "$iFilter"]]
+    set xeFilter [checkEscapeAll [escapeSlash "$eFilter"]]
     if {$eFilter == ""} {
        set deny ""
     }
@@ -1135,8 +1135,16 @@ proc changeLevel {lvl} {
   openSource
 }
 
+proc checkEscapeAll {s} {
+    set x $s
+    set last_c [string index $s end]
+    if {$last_c == "|"} {
+        append x ".*"
+    }
+    return $x
+}
+
 proc escapeSlash {s} {
-    set x ""
     set x ""
     set len [string length $s]
     for {set i 0} {$i < $len} {incr i} {
@@ -1150,7 +1158,6 @@ proc escapeSlash {s} {
 }
 
 proc escapeSpace {s} {
-    set x ""
     set x ""
     set len [string length $s]
     for {set i 0} {$i < $len} {incr i} {
