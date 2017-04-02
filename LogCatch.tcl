@@ -890,7 +890,10 @@ set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && ( (/$TagFilter/ && /$xiFilt
         reloadProc
 set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterList/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
     }
-    puts "src: $Device fd: $Fd  eFilter: $eFilter => $xeFilter <> ifilter: $iFilter => $xiFilter LevelFilter => $LevelFilter $lvlAndOr"
+    puts "src: $Device fd: $Fd"
+    puts "LevelFilter => $LevelFilter $lvlAndOr"
+    puts "eFilter: $eFilter => $xeFilter"
+    puts "ifilter: $iFilter => $xiFilter"
     $statusTwo config -text $ReadingLabel -fg "#15b742"
     $status3rd config -text "Source: $Device"
     .b.logtype config -text "LogType: $LogType"
@@ -1048,7 +1051,8 @@ proc updateFilter {iw ew} {
     global iFilter eFilter Device
     set iFilter "[$iw get]"
     set eFilter "[$ew get]"
-    puts "iF: $iFilter <> eF: $eFilter"
+    puts "iF: $iFilter"
+    puts "eF: $eFilter"
     clearSearchAll
     openSource
 }
@@ -1366,7 +1370,7 @@ proc updateProcessFilterList {} {
 proc updateProcessFilterStatus {status} {
   global ProcessFilters ProcessFilterList wProcessFilter
   set w $wProcessFilter
-puts "updateProcessFilterStatus plist: $ProcessFilterList status: $status"
+# puts "updateProcessFilterStatus plist: $ProcessFilterList status: $status"
   $w config -state $status
 
   if {$status == "normal"} {
@@ -1399,7 +1403,7 @@ proc showHistoryList {w} {
 proc updateSourceList {} {
   global Devices Device LoadFile PrevLoadFile LoadedFiles
   foreach one [winfo children .top.sources] {
-      puts destroy\ $one\ [winfo class $one]
+      # puts "destroy\ $one\ [winfo class $one]"
 #    if {[winfo class $one] == "Radiobutton"} {
       destroy $one
 #    }
@@ -1617,4 +1621,4 @@ if {!$NO_ADB} {
 }
 
 #getProcessPackageList
-puts aaa
+
