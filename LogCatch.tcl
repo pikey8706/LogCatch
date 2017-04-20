@@ -71,6 +71,7 @@ set hWord2Cnt ""
 set hWord3 ""
 set hWord3Color "#ff7777"
 set hWord3Cnt ""
+set AUTO_HIGHLIGHT_DELAY 1111
 # Update
 set trackTailTask ""
 
@@ -300,7 +301,7 @@ bind . <Control-f> "focus $fsrch.e"
 #pack [entry $fsrch.4 -textvariable s4Word] -side left -fill x
 #pack [entry $fsrch.5 -textvariable s5Word] -side left -fill x
 # Highlight
-pack [label $fsrch.highlight -text "Hightlight:"] -side left
+pack [label $fsrch.highlight -text "Highlight:"] -side left
 pack [entry $fsrch.hword1 -textvariable hWord1 -bg lightblue] -side left
 pack [label $fsrch.hword1cnt -text "" -bg lightblue] -side left
 pack [entry $fsrch.hword2 -textvariable hWord2 -bg lightgreen] -side left
@@ -309,14 +310,18 @@ pack [entry $fsrch.hword3 -textvariable hWord3 -bg pink] -side left
 pack [label $fsrch.hword3cnt -text "" -bg pink] -side left
 pack [entry $fsrch.hword4 -textvariable hWord4 -bg white] -side left
 pack [label $fsrch.hword4cnt -text "" -bg white] -side left
-bind $fsrch.hword1 <Return> "highlightWord $r.l $fsrch.hword1 colorLbl"
-bind $fsrch.hword2 <Return> "highlightWord $r.l $fsrch.hword2 colorLgr"
-bind $fsrch.hword3 <Return> "highlightWord $r.l $fsrch.hword3 colorPnk"
-bind $fsrch.hword4 <Return> "highlightWord $r.l $fsrch.hword4 colorWht"
-set HighlightWord($fsrch.hword1) "$r.l $fsrch.hword1 colorLbl 0 0 0.0"
-set HighlightWord($fsrch.hword2) "$r.l $fsrch.hword2 colorLgr 0 0 0.0"
-set HighlightWord($fsrch.hword3) "$r.l $fsrch.hword3 colorPnk 0 0 0.0"
-set HighlightWord($fsrch.hword4) "$r.l $fsrch.hword4 colorWht 0 0 0.0"
+bind $fsrch.hword1 <Return> "highlightWord colorLbl"
+bind $fsrch.hword2 <Return> "highlightWord colorLgr"
+bind $fsrch.hword3 <Return> "highlightWord colorPnk"
+bind $fsrch.hword4 <Return> "highlightWord colorWht"
+bind $fsrch.hword1 <KeyPress> "autoHighlight colorLbl"
+bind $fsrch.hword2 <KeyPress> "autoHighlight colorLgr"
+bind $fsrch.hword3 <KeyPress> "autoHighlight colorPnk"
+bind $fsrch.hword4 <KeyPress> "autoHighlight colorWht"
+set HighlightWord(colorLbl) "$fsrch.hword1 0 0 0.0 {}"
+set HighlightWord(colorLgr) "$fsrch.hword2 0 0 0.0 {}"
+set HighlightWord(colorPnk) "$fsrch.hword3 0 0 0.0 {}"
+set HighlightWord(colorWht) "$fsrch.hword4 0 0 0.0 {}"
 
 # Clear Log
 pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -padx 100 -side right
@@ -470,13 +475,11 @@ proc readLine {fd} {
      gets $fd line
 
      if {"$line" != ""} {
-        set loglevel  [getLogLevel "$line"]
+        set loglevel [getLogLevel "$line"]
 	set tag [getTag $loglevel]
 	incr LineCount
 	$logview insert end "$line\n" $tag
 	$logview config -state disabled
-	#set tagword [lindex [lindex [split $line /(] 1] 0]
-        #updateTags $tagword
 	$statusOne config -text $LineCount
 	updateView
     }
@@ -518,6 +521,7 @@ puts \"$filename\"
 	set Device "file:$filename"
 	addLoadedFiles $filename
 	clearSearchAll
+	clearHighlightAll
 	openSource
     } else {
 puts not\ radable
@@ -892,8 +896,8 @@ set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xe
     }
     puts "src: $Device fd: $Fd"
     puts "LevelFilter => $LevelFilter $lvlAndOr"
-    puts "eFilter: $eFilter => $xeFilter"
-    puts "ifilter: $iFilter => $xiFilter"
+    puts "eFilter: $xeFilter"
+    puts "ifilter: $xiFilter"
     $statusTwo config -text $ReadingLabel -fg "#15b742"
     $status3rd config -text "Source: $Device"
     .b.logtype config -text "LogType: $LogType"
@@ -1000,46 +1004,72 @@ proc searchAuto {w wentry {reverse ""}} {
     searchWordAll $w $sDir $wentry
 }
 
-proc highlightWord {w wentry colorTag} {
-  global HighlightWord
+proc highlightWord {colorTag {word ""}} {
+  global HighlightWord logview
+  set wentry [lindex $HighlightWord($colorTag) 0]
   set word [$wentry get]
+
   if {$word == ""} {
-      removeAllTag $colorTag
-      ${wentry}cnt config -text ""
+      removeHighlight $colorTag
       return
   }
-  set sCnt 0
-  set len [string length $word]
-  set index 0.0
-  set idx0 [$w search -forward $word $index]
-  set index $idx0
-  while {$index != ""} {
-      set s [lindex [split $index "."] 0]
-      set e [lindex [split $index "."] 1]
+
+  set sCnt [lindex $HighlightWord($colorTag) 2]
+  set err [catch {$logview index ${colorTag}.last} index]
+  if {$err} {
+      set index 1.0
+  } else {
+      set indexes [$logview tag prevrange $colorTag $index]
+      set curWord [$logview get [lindex $indexes 0] $index]
+      if {$curWord != "" && $word != "" && $curWord != $word} {
+	  removeHighlight $colorTag
+	  set index 1.0
+	  set sCnt 0
+      } else {
+      }
+  }
+# puts "highlightWord: $word from: $index cnt: $sCnt"
+
+  while 1 {
+# puts "\"$word $index\""
+      set index [$logview search -count wordLen -- "$word" $index end]
+      if {$index == ""} {
+          break
+      }
       incr sCnt
-      incr e $len
-      $w tag add $colorTag $index $s.$e
-      set index [$w search -forward $word $s.$e]
-      if {$index == $idx0} { break }
+      $logview tag add $colorTag $index "$index + $wordLen chars"
+      set index [$logview index "$index + $wordLen chars"]
   }
-  if {$sCnt} {
-     set sWord $word
-     ${wentry}cnt config -text $sCnt
-     set HighlightWord($wentry) "$w $wentry $colorTag 0 $sCnt 0.0"
-     puts "high: $sCnt $word"
+  if {$sCnt == 0} {
+      ${wentry}cnt config -text ""
+  } else {
+      ${wentry}cnt config -text $sCnt
   }
+  set HighlightWord($colorTag) "$wentry 0 $sCnt 0.0 {}"
 }
 
 proc incrementalHighlight {} {
     global HighlightWord
-    foreach one [array names HighlightWord] {
-	set wlog [lindex $HighlightWord($one) 0]
-	set went [lindex $HighlightWord($one) 1]
-	set colorTag [lindex $HighlightWord($one) 2]
-	after idle highlightWord $wlog $went $colorTag
+    foreach colorTag [array names HighlightWord] {
+	after idle autoHighlight $colorTag
     }
     # search word all
-    after idle highlightWord $wlog .p.rf.search.e colorYel
+#   after idle highlightWord .p.rf.search.e colorYel
+}
+
+proc autoHighlight {colorTag} {
+  global HighlightWord AUTO_HIGHLIGHT_DELAY
+  set xid [lindex $HighlightWord($colorTag) 4]
+  if {$xid != ""} {
+# puts "auto cancel $xid"
+      after cancel $xid
+  }
+  set xid [after $AUTO_HIGHLIGHT_DELAY after idle highlightWord $colorTag]
+  set wentry [lindex $HighlightWord($colorTag) 0]
+  set idx [lindex $HighlightWord($colorTag) 1]
+  set cnt [lindex $HighlightWord($colorTag) 2]
+  set idx2 [lindex $HighlightWord($colorTag) 3]
+  set HighlightWord($colorTag) "$wentry $idx $cnt $idx2 $xid"
 }
 
 proc initFilter {} {
@@ -1054,6 +1084,7 @@ proc updateFilter {iw ew} {
     puts "iF: $iFilter"
     puts "eF: $eFilter"
     clearSearchAll
+    clearHighlightAll
     openSource
 }
 
@@ -1074,21 +1105,28 @@ proc trackTail {} {
 }
 
 proc clearSearchAll {} {
-    global logview sWord sIndex sIdx sCnt LogView
+    global sWord sIndex sIdx sCnt
     set sIndex 1.0
     set sIdx 0
     set sCnt 0
     set sWord ""
-    set sIndex 1.0
     set pIndex 0.0
-    removeAllTag colorYel
-    removeAllTag colorOra
 }
 
-proc removeAllTag {tagName} {
-    global LogView
-    foreach {si ei} [$LogView tag ranges $tagName] {
-        $LogView tag remove $tagName $si $ei
+proc clearHighlightAll {} {
+    global HighlightWord
+    foreach colorTag [array names HighlightWord] {
+	removeHighlight $colorTag
+    }
+}
+
+proc removeHighlight {colorTag} {
+    global LogView HighlightWord
+    $LogView tag remove $colorTag 1.0 end
+    if {[info exists HighlightWord($colorTag)]} {
+        set wentry [lindex $HighlightWord($colorTag) 0]
+ 	${wentry}cnt config -text ""
+        set HighlightWord($colorTag) "$wentry 0 0 0.0 {}"
     }
 }
 
@@ -1115,6 +1153,7 @@ proc clearLogView {} {
     $logview config -state disabled
     set LineCount 0
     clearSearchAll
+    clearHighlightAll
     $statusOne config -text ""
 }
 
