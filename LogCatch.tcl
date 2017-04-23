@@ -74,6 +74,9 @@ set hWord3 ""
 set hWord3Color "#ff7777"
 set hWord3Cnt ""
 set AUTO_HIGHLIGHT_DELAY 1111
+
+set LastKeyPress ""
+
 # Update
 set trackTailTask ""
 
@@ -286,6 +289,7 @@ pack [entry $filse.ee -textvariable eFilter] -side left -fill x -expand y
 pack [button $filse.be -text Clear -command "set eFilter \"\"" -takefocus 0] -side right
 bind $filsi.ei <Return> "updateFilter $filsi.ei $filse.ee"
 bind $filse.ee <Return> "updateFilter $filsi.ei $filse.ee"
+
 # Search
 set fsrch [frame .p.rf.search];# -bg lightblue
 pack $fsrch -fill x
@@ -325,6 +329,17 @@ set HighlightWord(colorLbl) "$fsrch.hword1 0 0 0.0 {}"
 set HighlightWord(colorLgr) "$fsrch.hword2 0 0 0.0 {}"
 set HighlightWord(colorPnk) "$fsrch.hword3 0 0 0.0 {}"
 set HighlightWord(colorWht) "$fsrch.hword4 0 0 0.0 {}"
+
+proc entryVcmd {} {
+    global LastKeyPress
+    if {$LastKeyPress == "Up"} {
+        return 0
+    } elseif {$LastKeyPress == "Down"} {
+        return 0
+    } else {
+        return 1
+    }
+}
 
 # Clear Log
 pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -padx 100 -side right
@@ -1588,6 +1603,11 @@ proc onlyFocusEntry {} {
   wVector . {$clazz != "Text" && $clazz != "Entry" && $w != "."} "config -takefocus 0"
 }
 
+proc setupEntryKeyPressFilter {} {
+    wBinder . {$clazz == "Entry"} "KeyPress" {set LastKeyPress %K}
+    wVector . {$clazz == "Entry"} "config -validate key -vcmd entryVcmd"
+}
+
 proc wVector {w {cond "1"} {cmd ""}} {
     set clazz [winfo class $w]
     if {[expr $cond]} {
@@ -1599,6 +1619,20 @@ proc wVector {w {cond "1"} {cmd ""}} {
     }
     foreach w_child [winfo children $w] {
 	wVector $w_child $cond $cmd
+    }
+}
+
+proc wBinder {w {cond "1"} {key} {cmd ""}} {
+    set clazz [winfo class $w]
+    if {[expr $cond]} {
+        if {$cmd == ""} {
+           puts "$clazz $w"
+        } else {
+           bind $w <$key> "$cmd"
+        }
+    }
+    foreach w_child [winfo children $w] {
+	wBinder $w_child $cond $key $cmd
     }
 }
 
@@ -1702,6 +1736,7 @@ loadLastState
 updateProcessFilterStatus disabled
 onlyFocusEntry
 #wVector . 1 "config -takefocus"
+setupEntryKeyPressFilter
 #detectDevices
 if {!$NO_ADB} {
     if {[checkAdbPath]} {
