@@ -47,6 +47,8 @@ set Encoding $CONST_ENCODING
 set ProcessPackageList ""
 set ProcessFilters ""
 set ProcessFilterList ""
+set ProcessAndOrTag "or"
+set ProcessTagFilter ""
 set TagFilter ""
 set LogView ""
 set LastLogLevel "V"
@@ -266,6 +268,7 @@ pack $hks -fill x
 set wProcessFilter $hks.process
 pack [label $hks.labelprocess -text "Process Filter: "] -side left
 pack [button $wProcessFilter -command "after 0 showProcessList $wProcessFilter"] -side left
+pack [button $hks.or -text " OR " -command "changeProcessTagComplex $hks.or"] -side left
 pack [label $hks.taglbl -text "TagFilter: "] -side left
 pack [entry $hks.tagent -textvariable TagFilter -width 50] -side left
 bind $hks.tagent <Return> openSource
@@ -855,9 +858,10 @@ proc loadLastState {} {
 
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
-	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterList TagFilter
+	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterList TagFilter ProcessTagFilter
     closeFd
     set deny "!"
+    updateProcessTagFilter
     set xiFilter [checkEscapeAll [escapeSlash "$iFilter"]]
     set xeFilter [checkEscapeAll [escapeSlash "$eFilter"]]
     if {$eFilter == ""} {
@@ -868,6 +872,8 @@ proc openSource {} {
        set lvlAndOr "||"
     }
     set title $Device
+puts "ptag: $ProcessTagFilter"
+
     if {[string match "file:*" $Device]} {
       updateProcessFilterStatus disabled
       set lvlstate normal
@@ -878,7 +884,7 @@ proc openSource {} {
 #      foreach w {v d i w e andor} {
 #       .p.rf.hks.${w} config -state $lvlstate
 #      }
-set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && ( (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" $LoadFile" r]
+set Fd [open "| awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" $LoadFile" r]
       set title [file tail $Device]
     } else {
         updateProcessFilterStatus normal
@@ -892,7 +898,8 @@ set Fd [open "| awk \"NR > 0 && $deny /$xeFilter/ && ( (/$TagFilter/ && /$xiFilt
         puts device\ $device
         set LogType time
         reloadProc
-set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterList/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
+#set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterList/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
+set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
     }
     puts "src: $Device fd: $Fd"
     puts "LevelFilter => $LevelFilter $lvlAndOr"
@@ -1428,6 +1435,38 @@ proc updateProcessFilterStatus {status} {
     }
   }
   $w config -text $status
+}
+
+proc changeProcessTagComplex {w} {
+    global ProcessAndOrTag
+    if {$ProcessAndOrTag == "or"} {
+        set ProcessAndOrTag "and"
+	$w config -text " AND "
+    } elseif {$ProcessAndOrTag == "and"} {
+        set ProcessAndOrTag "or"
+	$w config -text " OR "
+    }
+}
+
+proc updateProcessTagFilter {} {
+    global ProcessAndOrTag ProcessFilterList TagFilter ProcessTagFilter
+    set filter ""
+    set tfilter ""
+    if {$TagFilter != ""} {
+        set tfilter "[checkEscapeAll [escapeSlash $TagFilter]]"
+    }
+    if {$ProcessAndOrTag == "or"} {
+        if {$ProcessFilterList != ""} {
+            append filter "|$ProcessFilterList"
+        }
+        if {$tfilter != ""} {
+            append filter "|$tfilter"
+        }
+        set filter "/[string range $filter 1 end]/"
+    } elseif {$ProcessAndOrTag == "and"} {
+        set filter "/$ProcessFilterList/ && /$tfilter/"
+    }
+    set ProcessTagFilter "$filter"
 }
 
 proc showHistoryList {w} {
