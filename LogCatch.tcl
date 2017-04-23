@@ -457,8 +457,13 @@ proc logcat {{clear 1} fd {doFilter 0}} {
     }
 
     if {[tell $Fd] == -1} {
-	# set focus to entry
-        focus .p.rf.filsi.ei
+	# set focus to last entry
+        set last_w [focus -lastfor .]
+        if {[winfo class $last_w] == "Entry"} {
+            focus $last_w
+        } else {
+            focus .p.rf.filsi.ei
+        }
       # show logcat from not only device
         fileevent $Fd r "readLine $fd"
     }
@@ -1153,11 +1158,12 @@ proc getColorAndSet {w} {
 }
 
 proc clearLogView {} {
-    global logview LineCount statusOne StartLabel
+    global logview LineCount statusOne StartLabel LastLogLevel
     $logview config -state normal
     $logview delete 1.0 end
   #  $logview insert 1.0 $StartLabel colorBlk
     $logview config -state disabled
+    set LastLogLevel "V"
     set LineCount 0
     clearSearchAll
     clearHighlightAll
