@@ -1506,6 +1506,17 @@ proc showHistoryList {w} {
     tk_popup $m $x $y
 }
 
+proc getSerial7 {serialraw} {
+    set shortserial ""
+    set len [string length $serialraw]
+    if {$len <= 7} {
+        set shortserial $serialraw
+    } else {
+        set shortserial "[string range $serialraw 0 2]..[string range $serialraw end-1 end]"
+    }
+    return $shortserial
+}
+
 proc updateSourceList {} {
   global Devices Device LoadFile PrevLoadFile LoadedFiles
   foreach one [winfo children .top.sources] {
@@ -1527,7 +1538,7 @@ puts "serial raw: $serialraw low: $seriallow device: $device"
         set name "$model:$serialraw"
         set seriallow [regsub -all {\.} $serialraw {_}]
     } else {
-        set name "$model:[string range $serialraw 0 3]"
+        set name "$model:[getSerial7 $serialraw]"
     }
     pack [radiobutton .top.sources.$seriallow -variable Device -value $device -command loadDevice -text $name] -side left
   }

@@ -131,6 +131,8 @@ proc reloadProc {} {
 	source $runDir/readLog_long.tcl
     } elseif {"$LogType" == "threadtime"} {
 	source $runDir/readLog_threadtime.tcl
+    } elseif {"$LogType" == "brief"} {
+	source $runDir/readLog_brief.tcl
     }
     puts "reload proc readLog for logtype: $LogType"
 }
