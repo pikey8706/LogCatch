@@ -1615,7 +1615,7 @@ proc onlyFocusEntry {} {
 }
 
 proc setupEntryKeyPressFilter {} {
-    wBinder . {$clazz == "Entry"} "KeyPress" {set LastKeyPress %K}
+    wBinder . {$clazz == "Entry"} "KeyPress" {+set LastKeyPress %K}
     wVector . {$clazz == "Entry"} "config -validate key -vcmd entryVcmd"
 }
 
