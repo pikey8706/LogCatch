@@ -1220,6 +1220,16 @@ proc clearHighlightAll {} {
 proc removeHighlight {colorTag} {
     global LogView HighlightWord
     $LogView tag remove $colorTag 1.0 end
+    set err [catch {$LogView index ${colorTag}Seek.first} seekFirst]
+    if {!$err} {
+       set err [catch {$LogView index ${colorTag}Seek.last} seekLast]
+puts "del $seekFirst $seekLast"
+       $LogView config -state normal
+       $LogView delete $seekFirst $seekLast
+       $LogView config -state disabled
+    } else {
+puts "del err"
+    }
     $LogView tag remove ${colorTag}Seek 1.0 end
     if {[info exists HighlightWord($colorTag)]} {
         set wentry [lindex $HighlightWord($colorTag) 0]
