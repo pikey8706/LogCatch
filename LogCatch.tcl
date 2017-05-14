@@ -325,10 +325,14 @@ bind $fsrch.hword1 <KeyPress> "autoHighlight colorLbl"
 bind $fsrch.hword2 <KeyPress> "autoHighlight colorLgr"
 bind $fsrch.hword3 <KeyPress> "autoHighlight colorPnk"
 bind $fsrch.hword4 <KeyPress> "autoHighlight colorWht"
-set HighlightWord(colorLbl) "$fsrch.hword1 0 0 0.0 {}"
-set HighlightWord(colorLgr) "$fsrch.hword2 0 0 0.0 {}"
-set HighlightWord(colorPnk) "$fsrch.hword3 0 0 0.0 {}"
-set HighlightWord(colorWht) "$fsrch.hword4 0 0 0.0 {}"
+bind $fsrch.hword1 <KeyPress> "+seekHighlight colorLbl %K"
+bind $fsrch.hword2 <KeyPress> "+seekHighlight colorLgr %K"
+bind $fsrch.hword3 <KeyPress> "+seekHighlight colorPnk %K"
+bind $fsrch.hword4 <KeyPress> "+seekHighlight colorWht %K"
+set HighlightWord(colorLbl) "$fsrch.hword1 0 0 1.0 {}"
+set HighlightWord(colorLgr) "$fsrch.hword2 0 0 1.0 {}"
+set HighlightWord(colorPnk) "$fsrch.hword3 0 0 1.0 {}"
+set HighlightWord(colorWht) "$fsrch.hword4 0 0 1.0 {}"
 
 proc entryVcmd {} {
     global LastKeyPress
@@ -1072,7 +1076,8 @@ proc highlightWord {colorTag {word ""}} {
   } else {
       ${wentry}cnt config -text $sCnt
   }
-  set HighlightWord($colorTag) "$wentry 0 $sCnt 0.0 {}"
+# set HighlightWord($colorTag) "$wentry 0 $sCnt 0.0 {}"
+  set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 2 2 $sCnt]
 }
 
 proc incrementalHighlight {} {
@@ -1095,8 +1100,73 @@ proc autoHighlight {colorTag} {
   set wentry [lindex $HighlightWord($colorTag) 0]
   set idx [lindex $HighlightWord($colorTag) 1]
   set cnt [lindex $HighlightWord($colorTag) 2]
-  set idx2 [lindex $HighlightWord($colorTag) 3]
-  set HighlightWord($colorTag) "$wentry $idx $cnt $idx2 $xid"
+  set seekId [lindex $HighlightWord($colorTag) 3]
+  set HighlightWord($colorTag) "$wentry $idx $cnt $seekId $xid"
+}
+
+proc seekHighlight {colorTag key} {
+  global logview HighlightWord
+  if {$key == "Up" || $key == "Down"} {
+      set bgcolor [$logview tag cget $colorTag -background]
+      set fgcolor [$logview tag cget $colorTag -foreground]
+      set bgDark [::tk::Darken $bgcolor 120]
+      set fgLight [::tk::Darken $fgcolor 100]
+      $logview tag config ${colorTag}Seek -background $bgDark -foreground $fgLight \
+	  -spacing1 5 -spacing3 5 -relief raised -borderwidth 2 -lmargin1 3 -lmargin2 3 -rmargin 3 -offset 3
+
+      set err [catch {$logview index ${colorTag}.last} index]
+      if {$err} {
+          return
+      }
+      $logview config -state normal
+      set idx [lindex $HighlightWord($colorTag) 1]
+      set sCnt [lindex $HighlightWord($colorTag) 2]
+      set err [catch {$logview index ${colorTag}Seek.first} seekFirst]
+      set err [catch {$logview index ${colorTag}Seek.last} seekLast]
+      if {!$err} {
+          $logview delete $seekFirst $seekLast
+          $logview tag remove ${colorTag}Seek 1.0 end
+      }
+      if {$key == "Up"} {
+          if {$err} {
+              set seekFirst [$logview index ${colorTag}.last]
+              set idx [expr $sCnt + 1]
+          }
+          set indexes [$logview tag prevrange $colorTag $seekFirst]
+          if {$indexes != ""} {
+	      incr idx -1
+          }
+      } else {
+          if {$err} {
+              set seekLast [$logview index ${colorTag}.first]
+              set idx 0
+          }
+          set indexes [$logview tag nextrange $colorTag $seekLast]
+          if {$indexes != ""} {
+              incr idx
+          }
+      }
+      if {$indexes != ""} {
+	  set seekFirst [lindex $indexes 0]
+          set seekText "$idx > "
+	  $logview insert $seekFirst $seekText
+	  set seekLast [$logview index "$seekFirst + [string length $seekText] chars"]
+          $logview tag add ${colorTag}Seek $seekFirst $seekLast
+	  set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 1 1 $idx]
+          spotLight $seekFirst $seekLast $key
+      }
+      $logview config -state disabled
+  }
+}
+
+proc spotLight {seekFirst seekLast key} {
+    global logview
+    $logview see "$seekLast + 5 chars"
+    if {$key == "Up"} {
+        $logview see "$seekLast - 5 lines"
+    } else {
+        $logview see "$seekLast + 5 lines"
+    }
 }
 
 proc initFilter {} {
@@ -1150,6 +1220,7 @@ proc clearHighlightAll {} {
 proc removeHighlight {colorTag} {
     global LogView HighlightWord
     $LogView tag remove $colorTag 1.0 end
+    $LogView tag remove ${colorTag}Seek 1.0 end
     if {[info exists HighlightWord($colorTag)]} {
         set wentry [lindex $HighlightWord($colorTag) 0]
  	${wentry}cnt config -text ""
@@ -1748,6 +1819,7 @@ updateProcessFilterStatus disabled
 onlyFocusEntry
 #wVector . 1 "config -takefocus"
 setupEntryKeyPressFilter
+#bind $fsrch.hword1 <Key-Up> "seekHighlight colorLbl up"
 #detectDevices
 if {!$NO_ADB} {
     if {[checkAdbPath]} {
