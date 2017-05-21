@@ -293,46 +293,70 @@ bind $filse.ee <Return> "updateFilter $filsi.ei $filse.ee"
 # Search
 set fsrch [frame .p.rf.search];# -bg lightblue
 pack $fsrch -fill x
-pack [label $fsrch.l -text "Search:"] -side left
-pack [entry $fsrch.e -textvariable ssWord -width 20] -side left -fill x
-pack [button $fsrch.n -text "Next"  -command "searchWordAll $r.l -forward  $fsrch.e"] -side left
-pack [label $fsrch.idx -textvariable sIdx] -side left
-pack [label $fsrch.ecnt -textvariable sCnt] -side left
-pack [button $fsrch.p -text "Prev" -command "searchWordAll $r.l -backward $fsrch.e"] -side left
-pack [button $fsrch.x -text "Clear" -command "clearSearchAll"] -side left
-bind $fsrch.e <Return> "searchAuto $r.l $fsrch.e"
-bind $fsrch.e <Shift-Return> "searchAuto $r.l $fsrch.e -r"
-bind . <Control-f> "focus $fsrch.e"
+#pack [label $fsrch.l -text "Search:"] -side left
+#pack [entry $fsrch.e -textvariable ssWord -width 20] -side left -fill x
+#pack [button $fsrch.n -text "Next"  -command "searchWordAll $r.l -forward  $fsrch.e"] -side left
+#pack [label $fsrch.idx -textvariable sIdx] -side left
+#pack [label $fsrch.ecnt -textvariable sCnt] -side left
+#pack [button $fsrch.p -text "Prev" -command "searchWordAll $r.l -backward $fsrch.e"] -side left
+#pack [button $fsrch.x -text "Clear" -command "clearSearchAll"] -side left
+#bind $fsrch.e <Return> "searchAuto $r.l $fsrch.e"
+#bind $fsrch.e <Shift-Return> "searchAuto $r.l $fsrch.e -r"
+#bind . <Control-f> "focus $fsrch.e"
 #pack [entry $fsrch.2 -textvariable s2Word] -side left -fill x
 #pack [entry $fsrch.3 -textvariable s3Word] -side left -fill x
 #pack [entry $fsrch.4 -textvariable s4Word] -side left -fill x
 #pack [entry $fsrch.5 -textvariable s5Word] -side left -fill x
+
 # Highlight
 pack [label $fsrch.highlight -text "Highlight:"] -side left
 pack [entry $fsrch.hword1 -textvariable hWord1 -bg lightblue] -side left
 pack [label $fsrch.hword1cnt -text "" -bg lightblue] -side left
+pack [entry $fsrch.hword6 -textvariable hWord6 -bg aquamarine1] -side left
+pack [label $fsrch.hword6cnt -text "" -bg aquamarine1] -side left
 pack [entry $fsrch.hword2 -textvariable hWord2 -bg lightgreen] -side left
 pack [label $fsrch.hword2cnt -text "" -bg lightgreen] -side left
+pack [entry $fsrch.hword7 -textvariable hWord7 -bg yellow] -side left
+pack [label $fsrch.hword7cnt -text "" -bg yellow] -side left
+pack [entry $fsrch.hword5 -textvariable hWord5 -bg LightSalmon1] -side left
+pack [label $fsrch.hword5cnt -text "" -bg LightSalmon1] -side left
 pack [entry $fsrch.hword3 -textvariable hWord3 -bg pink] -side left
 pack [label $fsrch.hword3cnt -text "" -bg pink] -side left
 pack [entry $fsrch.hword4 -textvariable hWord4 -bg white] -side left
 pack [label $fsrch.hword4cnt -text "" -bg white] -side left
+if {$OS == "Darwin"} {
+    foreach idx {1 2 3 4 5 6 7} {
+        $fsrch.hword${idx} config -width 15
+    }
+}
 bind $fsrch.hword1 <Return> "highlightWord colorLbl"
 bind $fsrch.hword2 <Return> "highlightWord colorLgr"
 bind $fsrch.hword3 <Return> "highlightWord colorPnk"
 bind $fsrch.hword4 <Return> "highlightWord colorWht"
+bind $fsrch.hword5 <Return> "highlightWord colorLSm"
+bind $fsrch.hword6 <Return> "highlightWord colorAQm"
+bind $fsrch.hword7 <Return> "highlightWord colorYel"
 bind $fsrch.hword1 <KeyPress> "autoHighlight colorLbl"
 bind $fsrch.hword2 <KeyPress> "autoHighlight colorLgr"
 bind $fsrch.hword3 <KeyPress> "autoHighlight colorPnk"
 bind $fsrch.hword4 <KeyPress> "autoHighlight colorWht"
+bind $fsrch.hword5 <KeyPress> "autoHighlight colorLSm"
+bind $fsrch.hword6 <KeyPress> "autoHighlight colorAQm"
+bind $fsrch.hword7 <KeyPress> "autoHighlight colorYel"
 bind $fsrch.hword1 <KeyPress> "+seekHighlight colorLbl %K"
 bind $fsrch.hword2 <KeyPress> "+seekHighlight colorLgr %K"
 bind $fsrch.hword3 <KeyPress> "+seekHighlight colorPnk %K"
 bind $fsrch.hword4 <KeyPress> "+seekHighlight colorWht %K"
+bind $fsrch.hword5 <KeyPress> "+seekHighlight colorLSm %K"
+bind $fsrch.hword6 <KeyPress> "+seekHighlight colorAQm %K"
+bind $fsrch.hword7 <KeyPress> "+seekHighlight colorYel %K"
 set HighlightWord(colorLbl) "$fsrch.hword1 0 0 1.0 {}"
 set HighlightWord(colorLgr) "$fsrch.hword2 0 0 1.0 {}"
 set HighlightWord(colorPnk) "$fsrch.hword3 0 0 1.0 {}"
 set HighlightWord(colorWht) "$fsrch.hword4 0 0 1.0 {}"
+set HighlightWord(colorLSm) "$fsrch.hword5 0 0 0.0 {}"
+set HighlightWord(colorAQm) "$fsrch.hword6 0 0 0.0 {}"
+set HighlightWord(colorYel) "$fsrch.hword7 0 0 0.0 {}"
 
 proc entryVcmd {} {
     global LastKeyPress
@@ -346,7 +370,7 @@ proc entryVcmd {} {
 }
 
 # Clear Log
-pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -padx 100 -side right
+pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -side right
 
 # entry
 #pack [entry .p.rf.e ] -fill x
@@ -372,7 +396,7 @@ set logview $r.l
 # click menu
 $logview tag config colorBlk -foreground white
 $logview tag config colorBlu -foreground lightblue
-$logview tag config colorGre -foreground "#15b742"
+$logview tag config colorGre -foreground chartreuse3;# "#15b742"
 $logview tag config colorOrg -foreground orange
 $logview tag config colorRed -foreground red
 global tags
@@ -387,6 +411,8 @@ $logview tag config colorOra -background orange -foreground black -relief raised
 $logview tag config colorWht -background white -foreground black
 $logview tag config colorLbl -background lightblue -foreground black
 $logview tag config colorLgr -background lightgreen -foreground black
+$logview tag config colorLSm -background LightSalmon1 -foreground black
+$logview tag config colorAQm -background aquamarine1 -foreground black
 
 menu .logmenu -tearoff 0
 .logmenu add command -label "Save all lines" -command "saveLines all"
@@ -963,7 +989,7 @@ proc searchWordAll {w dir wentry} {
        set sCnt 0
        set len [string length $word]
        set index 0.0
-       set idx0 [$w search -forward $word $index]
+       set idx0 [$w search -forward -- $word $index]
        set index $idx0
        while {$index != ""} {
            set s [lindex [split $index "."] 0]
@@ -971,7 +997,7 @@ proc searchWordAll {w dir wentry} {
 	   incr sCnt
            incr e $len
            $w tag add colorYel $index $s.$e
-	   set index [$w search -forward $word $s.$e]
+	   set index [$w search -forward -- $word $s.$e]
 	   if {$index == $idx0} { break }
        }
        if {$sCnt} {
@@ -995,7 +1021,7 @@ proc searchWord {w dir wentry} {
     set ps [lindex [split $pIndex "."] 0]
     set pe [lindex [split $pIndex "."] 1]
     set sIndex $ps.[expr $pe + $delta]
-    set index [$w search $dir $word $sIndex]
+    set index [$w search $dir -- $word $sIndex]
     set s [lindex [split $index "."] 0]
     set e [lindex [split $index "."] 1]
  puts "index: $index pIndex: $pIndex  dir: $dir  len: $len"
@@ -1228,7 +1254,7 @@ puts "del $seekFirst $seekLast"
        $LogView delete $seekFirst $seekLast
        $LogView config -state disabled
     } else {
-puts "del err"
+# puts "del err"
     }
     $LogView tag remove ${colorTag}Seek 1.0 end
     if {[info exists HighlightWord($colorTag)]} {
