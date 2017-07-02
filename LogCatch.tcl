@@ -273,7 +273,8 @@ pack [label $hks.labelprocess -text "Process Filter: "] -side left
 pack [button $wProcessFilter -command "after 0 showProcessList $wProcessFilter"] -side left
 pack [button $hks.or -text " OR " -command "changeProcessTagComplex $hks.or"] -side left
 pack [label $hks.taglbl -text "TagFilter: "] -side left
-pack [entry $hks.tagent -textvariable TagFilter -width 50] -side left
+pack [entry $hks.tagent -textvariable TagFilter] -side left -fill x -expand y
+pack [button $hks.tagclr -text Clear -command "set TagFilter \"\"" -takefocus 0] -side right
 bind $hks.tagent <Return> openSource
 
 # Filter entry
