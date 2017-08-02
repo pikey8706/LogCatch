@@ -73,6 +73,10 @@ set hWord2Cnt ""
 set hWord3 ""
 set hWord3Color "#ff7777"
 set hWord3Cnt ""
+set hWord4 ""
+set hWord5 ""
+set hWord6 ""
+set hWord7 ""
 set AUTO_HIGHLIGHT_DELAY 1111
 
 set LastKeyPress ""
@@ -785,7 +789,7 @@ proc loadPreference {} {
 
 proc saveLastState {} {
     global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace \
-TagFilter
+TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
     if {! [file isdirectory $dir]} {
@@ -824,6 +828,20 @@ TagFilter
             puts $fdW $MenuFace
             puts $fdW ":TagFilter"
             puts $fdW $TagFilter
+            puts $fdW ":hWord1"
+            puts $fdW $hWord1
+            puts $fdW ":hWord2"
+            puts $fdW $hWord2
+            puts $fdW ":hWord3"
+            puts $fdW $hWord3
+            puts $fdW ":hWord4"
+            puts $fdW $hWord4
+            puts $fdW ":hWord5"
+            puts $fdW $hWord5
+            puts $fdW ":hWord6"
+            puts $fdW $hWord6
+            puts $fdW ":hWord7"
+            puts $fdW $hWord7
 	    puts $fdW ":"
         close $fdW
     }
@@ -831,6 +849,7 @@ TagFilter
 
 proc loadLastState {} {
     global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace TagFilter
+    global hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
     if {! [file isdirectory $dir]} {
@@ -869,6 +888,20 @@ proc loadLastState {} {
 		      set flag 11
                    } elseif {[string match ":TagFilter" $line]} {
 		      set flag 12
+                   } elseif {[string match ":hWord1" $line]} {
+		      set flag 13
+                   } elseif {[string match ":hWord2" $line]} {
+		      set flag 14
+                   } elseif {[string match ":hWord3" $line]} {
+		      set flag 15
+                   } elseif {[string match ":hWord4" $line]} {
+		      set flag 16
+                   } elseif {[string match ":hWord5" $line]} {
+		      set flag 17
+                   } elseif {[string match ":hWord6" $line]} {
+		      set flag 18
+                   } elseif {[string match ":hWord7" $line]} {
+		      set flag 19
                    } else {
 		      set flag 0
                    }
@@ -896,6 +929,20 @@ proc loadLastState {} {
 		   set MenuFace $line
                 } elseif {$flag == 12} { 
 		   set TagFilter $line
+                } elseif {$flag == 13} { 
+		   set hWord1 $line
+                } elseif {$flag == 14} { 
+		   set hWord2 $line
+                } elseif {$flag == 15} { 
+		   set hWord3 $line
+                } elseif {$flag == 16} { 
+		   set hWord4 $line
+                } elseif {$flag == 17} { 
+		   set hWord5 $line
+                } elseif {$flag == 18} { 
+		   set hWord6 $line
+                } elseif {$flag == 19} { 
+		   set hWord7 $line
 		} else {
                 }
         }
