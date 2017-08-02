@@ -94,7 +94,13 @@ set ClearAuto none
 set MenuFace bar; # bar button both
 
 # Font fot logview
-set LogViewFont TkTextFont
+set LogViewFontName TkTextFont
+if {$OS == "Darwin"} {
+  proc tk::mac::Quit {} {
+      safeQuit
+  }
+  set LogViewFontName systemSystemFont
+}
 
 proc setEditor {} {
     global Editor OS
@@ -463,6 +469,21 @@ bind $logview <2> {tk_popup .logmenu %X %Y}
 # buttons
 #button .update -text Update -underline 0 -command logcat
 #pack .update
+$logview config -font $LogViewFontName
+set LogViewFontSize [font config $LogViewFontName -size]
+bind $logview <Control-MouseWheel> "+ changeFontSize LogViewFontName LogViewFontSize %D"
+
+proc changeFontSize {fName fSize {delta 0}} {
+  global logview
+  upvar $fName fontName $fSize fontSize
+  if {$delta > 0} {
+    incr fontSize
+  } elseif {$delta < 0} {
+    incr fontSize -1
+  }
+  font config $fontName -size $fontSize
+# puts "$fontName $fontSize"
+}
 
 proc addCheckBtn {w ww text} {
     global tagview
@@ -789,7 +810,7 @@ proc loadPreference {} {
 
 proc saveLastState {} {
     global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace \
-TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7
+TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogViewFontSize
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
     if {! [file isdirectory $dir]} {
@@ -842,6 +863,10 @@ TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7
             puts $fdW $hWord6
             puts $fdW ":hWord7"
             puts $fdW $hWord7
+            puts $fdW ":LogViewFontName"
+            puts $fdW $LogViewFontName
+            puts $fdW ":LogViewFontSize"
+            puts $fdW $LogViewFontSize
 	    puts $fdW ":"
         close $fdW
     }
@@ -849,7 +874,7 @@ TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7
 
 proc loadLastState {} {
     global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace TagFilter
-    global hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7
+    global hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogViewFontSize
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
     if {! [file isdirectory $dir]} {
@@ -902,6 +927,10 @@ proc loadLastState {} {
 		      set flag 18
                    } elseif {[string match ":hWord7" $line]} {
 		      set flag 19
+                   } elseif {[string match ":LogViewFontName" $line]} {
+		      set flag 20
+                   } elseif {[string match ":LogViewFontSize" $line]} {
+		      set flag 21
                    } else {
 		      set flag 0
                    }
@@ -943,6 +972,10 @@ proc loadLastState {} {
 		   set hWord6 $line
                 } elseif {$flag == 19} { 
 		   set hWord7 $line
+                } elseif {$flag == 20} { 
+		   set LogViewFontName $line
+                } elseif {$flag == 21} { 
+		   set LogViewFontSize $line
 		} else {
                 }
         }
@@ -951,6 +984,7 @@ proc loadLastState {} {
 	changeWrapMode
 	changeEncoding
         changeMenuFace
+        changeFontSize LogViewFontName LogViewFontSize
     }
 }
 
@@ -1800,13 +1834,6 @@ proc wBinder {w {cond "1"} {key} {cmd ""}} {
     foreach w_child [winfo children $w] {
 	wBinder $w_child $cond $key $cmd
     }
-}
-
-if {$OS == "Darwin"} {
-  proc tk::mac::Quit {} {
-      safeQuit
-  }
-  $LogView config -font systemSystemFont
 }
 
 proc checkAdbPath {{w ""} {w2 ""} args} {
