@@ -1538,7 +1538,7 @@ proc getProcessPackageList {} {
 		lappend lists "$pId $pkgName"
 	    }
 	}
-	set lists [lsort -integer -index 0 -decr $lists] 
+	set lists [lsort -dictionary -index 1 -incr $lists] 
    }
    set ProcessPackageList $lists
    return $lists
