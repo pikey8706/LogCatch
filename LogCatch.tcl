@@ -94,7 +94,7 @@ set ClearAuto none
 set MenuFace bar; # bar button both
 
 # Font fot logview
-set LogViewFontName TkTextFont
+set LogViewFontName TkFixedFont
 if {$OS == "Darwin"} {
   proc tk::mac::Quit {} {
       safeQuit
