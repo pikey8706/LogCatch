@@ -76,9 +76,11 @@ proc checkLogType {filename} {
 			}
 		    }
 		} else {
+            set colon_space [string range $line 18 19]
 		    set slash20 [string index $line 20]
 		    set slash21 [string index $line 21]
 		    set if_level [lindex "$line" 4]
+		    # puts "if_level: $if_level"
 		    if {"$slash20" == "/"} {
 			# time
 			incr timecnt
@@ -86,7 +88,7 @@ proc checkLogType {filename} {
 			    set LogType "time"
 			    break
 			}
-		    } elseif {"$slash21" == "/"} {
+		    } elseif {"$colon_space" == ": " && [lsearch $LogLevels "$slash20"] >= 0} {
 			# time_eclipse
 			incr timeecnt
 			if {$timeecnt == $minimax} {
