@@ -124,8 +124,8 @@ proc setEditor {} {
 wm deiconify .
 wm title . $AppName
 wm protocol . WM_DELETE_WINDOW safeQuit
-#image create photo app_icon -file lc_icon.gif
-#wm iconphoto . app_icon
+image create photo app_icon -file icon_logcatch.gif
+wm iconphoto . app_icon
 # Encoding
 encoding system $Encoding
 # bottom status line
@@ -281,7 +281,8 @@ pack $hks -fill x
 set wProcessFilter $hks.process
 pack [label $hks.labelprocess -text "Process Filter: "] -side left
 pack [button $wProcessFilter -command "after 0 showProcessList $wProcessFilter"] -side left
-pack [button $hks.or -text " OR " -command "changeProcessTagComplex $hks.or"] -side left
+set wProcessAndOr $hks.or
+pack [button $wProcessAndOr -text " OR " -command "changeProcessTagComplex $hks.or"] -side left
 pack [label $hks.taglbl -text "TagFilter: "] -side left
 pack [entry $hks.tagent -textvariable TagFilter] -side left -fill x -expand y
 pack [button $hks.tagclr -text Clear -command "set TagFilter \"\"" -takefocus 0] -side right
@@ -990,10 +991,12 @@ proc loadLastState {} {
 
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
-	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterList TagFilter ProcessTagFilter
+	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterList TagFilter ProcessTagFilter ProcessAndOrTag
     closeFd
     set deny "!"
-    updateProcessTagFilter
+    set isFileSource [string match "file:*" $Device]
+    puts "isFileSource: $isFileSource"
+    updateProcessTagFilter $isFileSource
     set xiFilter [checkEscapeAll [escapeSlash "$iFilter"]]
     set xeFilter [checkEscapeAll [escapeSlash "$eFilter"]]
     if {$eFilter == ""} {
@@ -1004,9 +1007,12 @@ proc openSource {} {
        set lvlAndOr "||"
     }
     set title $Device
-puts "ptag: $ProcessTagFilter"
+puts "processFilter: \"$ProcessFilterList\""
+puts "tagFilter: \"$TagFilter\""
+puts "pAndOr: \"$ProcessAndOrTag\""
+puts "processTagFilter: \"$ProcessTagFilter\""
 
-    if {[string match "file:*" $Device]} {
+    if {$isFileSource} {
       updateProcessFilterStatus disabled
       set lvlstate normal
       if {$LogType == "raw"} {
@@ -1040,7 +1046,7 @@ set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 && $ProcessTag
     $statusTwo config -text $ReadingLabel -fg "#15b742"
     $status3rd config -text "Source: $Device"
     .b.logtype config -text "LogType: $LogType"
-    wm title . "$AppName Source: $title"
+    wm title . "$title : $AppName"
     if {$Fd != ""} {
 	set LineCount 0
         logcat 1 $Fd
@@ -1631,18 +1637,21 @@ proc updateProcessFilterList {} {
 }
 
 proc updateProcessFilterStatus {status} {
-  global ProcessFilters ProcessFilterList wProcessFilter
+  global ProcessFilters ProcessFilterList wProcessFilter wProcessAndOr
   set w $wProcessFilter
 # puts "updateProcessFilterStatus plist: $ProcessFilterList status: $status"
   $w config -state $status
+  $wProcessAndOr config -state $status
 
+  set lcnt [llength $ProcessFilterList]
   if {$status == "normal"} {
-    set lcnt [llength $ProcessFilterList]
     if {$lcnt > 0} {
       set status "$ProcessFilterList"
     } elseif {$lcnt == 0} {
       set status "select..."
     }
+  } else {
+      set status "$ProcessFilterList : $status"
   }
   $w config -text $status
 }
@@ -1651,21 +1660,26 @@ proc changeProcessTagComplex {w} {
     global ProcessAndOrTag
     if {$ProcessAndOrTag == "or"} {
         set ProcessAndOrTag "and"
-	$w config -text " AND "
+        $w config -text " AND "
     } elseif {$ProcessAndOrTag == "and"} {
         set ProcessAndOrTag "or"
 	$w config -text " OR "
     }
 }
 
-proc updateProcessTagFilter {} {
+proc updateProcessTagFilter {isFileSource} {
     global ProcessAndOrTag ProcessFilterList TagFilter ProcessTagFilter
     set filter ""
     set tfilter ""
     if {$TagFilter != ""} {
         set tfilter "[checkEscapeAll [escapeSlash $TagFilter]]"
     }
-    if {$ProcessAndOrTag == "or"} {
+    if {$isFileSource} {
+        if {$tfilter != ""} {
+            append filter "$tfilter"
+        }
+        set filter "/$filter/"
+    } elseif {$ProcessAndOrTag == "or"} {
         if {$ProcessFilterList != ""} {
             append filter "|$ProcessFilterList"
         }
