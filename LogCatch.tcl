@@ -283,7 +283,7 @@ pack [label $hks.labelprocess -text "Process Filter: "] -side left
 pack [button $wProcessFilter -command "after 0 showProcessList $wProcessFilter"] -side left
 set wProcessAndOr $hks.or
 pack [button $wProcessAndOr -text " OR " -command "changeProcessTagComplex $hks.or"] -side left
-pack [label $hks.taglbl -text "TagFilter: "] -side left
+pack [label $hks.taglbl -text "Tag Filter: "] -side left
 pack [entry $hks.tagent -textvariable TagFilter] -side left -fill x -expand y
 pack [button $hks.tagclr -text Clear -command "set TagFilter \"\"" -takefocus 0] -side right
 bind $hks.tagent <Return> openSource
@@ -291,12 +291,12 @@ bind $hks.tagent <Return> openSource
 # Filter entry
 set filsi [frame .p.rf.filsi];# -bg lightblue
 pack $filsi -fill x
-pack [label $filsi.li -text "Filter Inclusive:"] -side left
+pack [label $filsi.li -text "Inclusive Filter:"] -side left
 pack [entry $filsi.ei -textvariable iFilter] -side left -expand y -fill x
 pack [button $filsi.be -text Clear -command "set iFilter \"\"" -takefocus 0] -side right
 set filse [frame .p.rf.fils];# -bg lightblue
 pack $filse -fill x
-pack [label $filse.le -text "Filter Exclusive:"] -side left
+pack [label $filse.le -text "Exclusive Filter:"] -side left
 pack [entry $filse.ee -textvariable eFilter] -side left -fill x -expand y
 pack [button $filse.be -text Clear -command "set eFilter \"\"" -takefocus 0] -side right
 bind $filsi.ei <Return> "updateFilter $filsi.ei $filse.ee"
@@ -429,13 +429,14 @@ $logview tag config colorAQm -background aquamarine1 -foreground black
 menu .logmenu -tearoff 0
 .logmenu add command -label "Save all lines" -command "saveLines all"
 .logmenu add command -label "Save selected lines" -command "saveLines selected"
+.logmenu add separator
 .logmenu add command -label "Select all lines" -command "selectLines all"
 .logmenu add separator
-.logmenu add cascade -menu .logmenu.hi -label "Highlight selected keyword"
-.logmenu add separator
-.logmenu add cascade -menu .logmenu.fi -label "Add Filter Inclusive"
-.logmenu add cascade -menu .logmenu.fe -label "Add Filter Exclusive"
-.logmenu add separator
+#.logmenu add cascade -menu .logmenu.hi -label "Highlight selected keyword"
+#.logmenu add separator
+#.logmenu add cascade -menu .logmenu.fi -label "Add Filter Inclusive"
+#.logmenu add cascade -menu .logmenu.fe -label "Add Filter Exclusive"
+#.logmenu add separator
 .logmenu add cascade -menu .logmenu.clear -label "Clear Log ..."
 menu .logmenu.hi -tearoff 0
 .logmenu.hi add command -label "Yellow" -command "highlight yellow"
@@ -455,7 +456,7 @@ menu .logmenu.fe -tearoff 0
 .logmenu.fe add command -label "Tag by this line" -command "addFilter tag ex"
 .logmenu.fe add command -label "Thread by this line" -command "addFilter thread ex"
 menu .logmenu.clear -tearoff 0
-.logmenu.clear add cascade -menu .logmenu.clear.auto -label "Clear Auto .."
+.logmenu.clear add cascade -menu .logmenu.clear.auto -label "Clear Auto .. disabled" -state disabled
 menu .logmenu.clear.auto -tearoff 0
 .logmenu.clear.auto add radiobutton -value none -variable ClearAuto -label "None .. leaving All" -command ""
 .logmenu.clear.auto add radiobutton -value 3000 -variable ClearAuto -label "Auto .. leaving latest 3000L" -command ""
