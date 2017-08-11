@@ -472,7 +472,12 @@ bind $logview <2> {tk_popup .logmenu %X %Y}
 #pack .update
 $logview config -font $LogViewFontName
 set LogViewFontSize [font config $LogViewFontName -size]
-bind $logview <Control-MouseWheel> "+ changeFontSize LogViewFontName LogViewFontSize %D"
+if {$OS == "Linux"} {
+    bind $logview <Control-Button-4> "+ changeFontSize LogViewFontName LogViewFontSize 1"
+    bind $logview <Control-Button-5> "+ changeFontSize LogViewFontName LogViewFontSize -1"
+} else {
+    bind $logview <Control-MouseWheel> "+ changeFontSize LogViewFontName LogViewFontSize %D"
+}
 
 proc changeFontSize {fName fSize {delta 0}} {
   global logview
