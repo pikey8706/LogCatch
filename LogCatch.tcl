@@ -1226,7 +1226,7 @@ proc autoHighlight {colorTag} {
 
 proc seekHighlight {colorTag key} {
   global logview HighlightWord
-  if {$key == "Up" || $key == "Down"} {
+  if {$key == "Up" || $key == "Down" || $key == "dummy-clean"} {
       set bgcolor [$logview tag cget $colorTag -background]
       set fgcolor [$logview tag cget $colorTag -foreground]
       set bgDark [::tk::Darken $bgcolor 120]
@@ -1247,6 +1247,7 @@ proc seekHighlight {colorTag key} {
           $logview delete $seekFirst $seekLast
           $logview tag remove ${colorTag}Seek 1.0 end
       }
+      set indexes ""
       if {$key == "Up"} {
           if {$err} {
               set seekFirst [$logview index ${colorTag}.last]
@@ -1256,7 +1257,7 @@ proc seekHighlight {colorTag key} {
           if {$indexes != ""} {
 	      incr idx -1
           }
-      } else {
+      } elseif {$key == "Down"} {
           if {$err} {
               set seekLast [$logview index ${colorTag}.first]
               set idx 0
@@ -1286,6 +1287,13 @@ proc spotLight {seekFirst seekLast key} {
         $logview see "$seekLast - 5 lines"
     } else {
         $logview see "$seekLast + 5 lines"
+    }
+}
+
+proc cleanSeekHighlight {} {
+    global HighlightWord
+    foreach colorTag [array names HighlightWord] {
+        seekHighlight $colorTag "dummy-clean"
     }
 }
 
@@ -1462,6 +1470,7 @@ proc saveLines {{which "all"}} {
     if {$filename == ""} {
        return
     }
+    cleanSeekHighlight
     set wp [open $filename w]
     if {$wp != ""} {
       set texts [$logview get $sdx $edx]
