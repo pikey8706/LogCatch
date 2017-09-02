@@ -1556,7 +1556,7 @@ proc getProcessPackageList {} {
         }
         if {$serial != ""} {
 	    foreach {pId pkgName uName} [exec $ADB_PATH -s $serial shell ps | awk "/^u0|^app/ {print \$2, \$9, \$1}"] {
-		lappend lists "$pId $pkgName"
+		lappend lists "[format " %5d %s" $pId $pkgName]"
 	    }
 	}
 	set lists [lsort -dictionary -index 1 -incr $lists] 
