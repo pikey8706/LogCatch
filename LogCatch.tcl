@@ -131,13 +131,13 @@ encoding system $Encoding
 # bottom status line
 frame .b -relief sunken
 pack .b -side bottom -fill x
-pack [label .b.1 -text "0" -relief sunken] -side left
-pack [label .b.2 -text $EOFLabel -relief sunken -fg red] -side left
+pack [label .b.1 -text "0" -relief ridge] -side left
+pack [label .b.2 -text $EOFLabel -relief ridge -fg red] -side left
 pack [checkbutton .b.stick -text TrackTail -command "trackTail" -variable TrackTail -relief sunken] \
 	-side right -padx 3
-pack [label .b.wmode -text LineWrap -relief sunken] -side right
-pack [label .b.encode -text Encoding -relief sunken] -side right
-pack [label .b.logtype -text "LogType:" -relief sunken] -side right
+pack [label .b.wmode -text LineWrap -relief ridge] -side right
+pack [label .b.encode -text Encoding -relief ridge] -side right
+pack [label .b.logtype -text "LogType:" -relief ridge] -side right
 pack [label .b.3 -text "Source:" -relief ridge] -side left
 pack [button .b.b -text Editor -command openEditor] -side left
 
