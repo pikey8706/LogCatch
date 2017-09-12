@@ -124,7 +124,7 @@ proc setEditor {} {
 wm deiconify .
 wm title . $AppName
 wm protocol . WM_DELETE_WINDOW safeQuit
-image create photo app_icon -file icon_logcatch.gif
+image create photo app_icon -file $runDir/icon_logcatch.gif
 wm iconphoto . app_icon
 # Encoding
 encoding system $Encoding
