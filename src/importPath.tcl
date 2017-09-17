@@ -1,7 +1,7 @@
 
-set PATH_LIST "./path.list"
+set PATH_LIST "$runDir/path.list"
 set PATH_SEPARATOR ":"
-set PLATFORM "windows" ;#"unix"
+# set PLATFORM "windows" ;#"unix"
 
 proc importPath {pathlist separator} {
     global env PLATFORM
