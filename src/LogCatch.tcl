@@ -9,6 +9,8 @@ foreach {opt val} $argv {
   }
 }
 
+source $runDir/importPath.tcl
+
 # globals
 set AppName "LogCatch"
 set SDK_PATH "$env(HOME)"
@@ -38,7 +40,7 @@ set LogLevel(E) 1
 set LevelFilter "V\\\\/|D\\\\/|I\\\\/|W\\\\/|E\\\\/"
 set LevelAndOr and
 set WrapMode none
-set OS [exec uname -s]
+set OS $tcl_platform(os)
 # set StartLabel "--- Start Viewing Log ---\n"
 # set EndLabel "--- End Of File reached ---\n"
 set ReadingLabel "Reading..."
@@ -786,7 +788,7 @@ proc savePreference {} {
     set dir "$env(HOME)/.logcatch"
     set prefFile "logcatch.rc"
     if {! [file isdirectory $dir]} {
-            exec mkdir -p $dir
+            file mkdir $dir
         }
     if {! [file isdirectory $dir]} {
             return
@@ -821,7 +823,7 @@ TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogVi
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
     if {! [file isdirectory $dir]} {
-            exec mkdir -p $dir
+            file mkdir $dir
         }
     if {! [file isdirectory $dir]} {
             return
@@ -885,10 +887,10 @@ proc loadLastState {} {
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
     if {! [file isdirectory $dir]} {
-	    exec mkdir -p $dir
+        file mkdir $dir
     }
     if {! [file isdirectory $dir]} {
-            return
+        return
     }
     if {! [file readable $dir/$loadLastState]} { return }
     set fd [open $dir/$loadLastState r]
