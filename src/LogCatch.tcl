@@ -9,8 +9,6 @@ foreach {opt val} $argv {
   }
 }
 
-source $runDir/importPath.tcl
-
 # globals
 set AppName "LogCatch"
 set SDK_PATH "$env(HOME)"
@@ -41,6 +39,7 @@ set LevelFilter "V\\\\/|D\\\\/|I\\\\/|W\\\\/|E\\\\/"
 set LevelAndOr and
 set WrapMode none
 set OS $tcl_platform(os)
+set PLATFORM $tcl_platform(platform)
 # set StartLabel "--- Start Viewing Log ---\n"
 # set EndLabel "--- End Of File reached ---\n"
 set ReadingLabel "Reading..."
@@ -103,6 +102,9 @@ if {$OS == "Darwin"} {
   }
   set LogViewFontName systemSystemFont
 }
+
+# import essential command path
+source $runDir/importPath.tcl
 
 proc setEditor {} {
     global Editor OS
