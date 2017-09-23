@@ -774,7 +774,7 @@ proc showAbout {} {
 }
 
 proc safeQuit {} {
-puts safequit
+    catch {puts safequit} msg
     closeFd
     saveLastState
     exit 0
