@@ -47,6 +47,7 @@ set EOFLabel "End Of File"
 set Encoding $CONST_ENCODING
 set ProcessPackageList ""
 set ProcessFilters ""
+set ProcessFiltersOld ""
 set ProcessFilterExpression ""
 set ProcessAndOrTag "or"
 set ProcessTagFilter ""
@@ -1571,28 +1572,42 @@ proc getProcessPackageList {} {
 }
 
 proc updateProcessFilters {} {
-    global ProcessPackageList ProcessFilters ProcessFilterExpression
+    global ProcessPackageList ProcessFilters ProcessFilterExpression \
+	ProcessFiltersOld
     set pFilters ""
+    set oldFilters ""
     getProcessPackageList
     foreach p [split $ProcessFilterExpression "|"] {
-      set idx [lsearch -index 0 $ProcessFilters $p]
-      set alist [lindex $ProcessFilters $idx]
+      set idx [lsearch -index 0 "$ProcessFilters $ProcessFiltersOld" $p]
+      set alist [lindex "$ProcessFilters $ProcessFiltersOld" $idx]
       set pkg [lindex $alist 1]
       set pidx [lsearch -index 1 $ProcessPackageList $pkg]
       if {$pidx >= 0} {
         set blist [lindex $ProcessPackageList $pidx]
-        lappend pFilters $blist
         set newP [lindex $blist 0]
-#        append pFilterList "|$newP"
+	if {[lsearch -index 0 "ProcessFilters $ProcessFiltersOld" $newP] == -1} {
+	    lappend pFilters $blist
+	}
         puts "updateProcessFilters oldProcess: $p newProcess: $newP newlist: $blist"
+	if {$newP != $p} {
+	    lappend oldFilters $alist
+	} else {
+        }
+#        append pFilterList "|$newP"
+      } else {
+	# dead process
+	puts "updateProcessFilters oldProcess: $pkg probably dead !"
+	lappend oldFilters $alist
       }
     }
+puts "oldFilters: $oldFilters"
+    set ProcessFiltersOld $oldFilters
     set ProcessFilters $pFilters
     updateProcessFilterExpression
 }
 
 proc showProcessList {w} {
-    global ProcessPackageList ProcessFilters
+    global ProcessPackageList ProcessFilters ProcessFiltersOld
     set m .processlist
     if {[winfo exist $m]} {
       destroy $m
@@ -1617,7 +1632,7 @@ proc showProcessList {w} {
 	$mx add command -label "$alist" -command "processFilter $w add \"$alist\""
     }
     set x 0
-    foreach alist $ProcessFilters {
+    foreach alist "$ProcessFilters $ProcessFiltersOld" {
 	menu $m.desel$x -tearoff 0
 	$m.desel$x add command -label deselect -command "processFilter $w del \"$alist\""
 	$m add cascade -menu $m.desel$x -label "$alist"
@@ -1636,7 +1651,7 @@ proc processFilter {w action {alist ""}} {
   if {"$action" == "clear"} {
     set ProcessFilters ""
   } else {
-    set idx [lsearch -index 0 $ProcessFilters [lindex $alist 0]]
+    set idx [lsearch -index 1 $ProcessFilters [lindex $alist 1]]
     if {$idx >= 0} {
       set ProcessFilters [lreplace $ProcessFilters $idx $idx ]
     }
@@ -1648,9 +1663,9 @@ proc processFilter {w action {alist ""}} {
 }
 
 proc updateProcessFilterExpression {} {
-  global ProcessFilters ProcessFilterExpression
+  global ProcessFilters ProcessFilterExpression ProcessFiltersOld
   set plist ""
-  foreach onep $ProcessFilters {
+  foreach onep "$ProcessFilters $ProcessFiltersOld" {
     append plist "|[lindex $onep 0]"
   }
   set ProcessFilterExpression [string range $plist 1 end]
@@ -1658,7 +1673,7 @@ proc updateProcessFilterExpression {} {
 }
 
 proc updateProcessFilterStatus {status} {
-  global ProcessFilters ProcessFilterExpression wProcessFilter wProcessAndOr
+  global ProcessFilterExpression wProcessFilter wProcessAndOr
   set w $wProcessFilter
 # puts "updateProcessFilterStatus plist: $ProcessFilterExpression status: $status"
   $w config -state $status
