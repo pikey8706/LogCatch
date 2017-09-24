@@ -47,7 +47,7 @@ set EOFLabel "End Of File"
 set Encoding $CONST_ENCODING
 set ProcessPackageList ""
 set ProcessFilters ""
-set ProcessFilterList ""
+set ProcessFilterExpression ""
 set ProcessAndOrTag "or"
 set ProcessTagFilter ""
 set TagFilter ""
@@ -654,6 +654,7 @@ proc loadDevice {} {
     }
     set Devices $devices
     updateSourceList
+    updateProcessFilters
     openSource
 }
 
@@ -1001,7 +1002,7 @@ proc loadLastState {} {
 
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
-	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterList TagFilter ProcessTagFilter ProcessAndOrTag
+	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag
     closeFd
     set deny "!"
     set isFileSource [string match "file:*" $Device]
@@ -1017,7 +1018,7 @@ proc openSource {} {
        set lvlAndOr "||"
     }
     set title $Device
-puts "processFilter: \"$ProcessFilterList\""
+puts "processFilter: \"$ProcessFilterExpression\""
 puts "tagFilter: \"$TagFilter\""
 puts "pAndOr: \"$ProcessAndOrTag\""
 puts "processTagFilter: \"$ProcessTagFilter\""
@@ -1046,7 +1047,7 @@ set Fd [open "| awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFi
         puts device\ $device
         set LogType time
         reloadProc
-#set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterList/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
+#set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterExpression/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
 set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
     }
     puts "src: $Device fd: $Fd"
@@ -1570,9 +1571,10 @@ proc getProcessPackageList {} {
 }
 
 proc updateProcessFilters {} {
-    global ProcessPackageList ProcessFilters ProcessFilterList
+    global ProcessPackageList ProcessFilters ProcessFilterExpression
     set pFilters ""
-    foreach p [split $ProcessFilterList "|"] {
+    getProcessPackageList
+    foreach p [split $ProcessFilterExpression "|"] {
       set idx [lsearch -index 0 $ProcessFilters $p]
       set alist [lindex $ProcessFilters $idx]
       set pkg [lindex $alist 1]
@@ -1586,21 +1588,21 @@ proc updateProcessFilters {} {
       }
     }
     set ProcessFilters $pFilters
-    updateProcessFilterList
+    updateProcessFilterExpression
 }
 
 proc showProcessList {w} {
-    global ProcessFilters
+    global ProcessPackageList ProcessFilters
     set m .processlist
     if {[winfo exist $m]} {
       destroy $m
     }
+    updateProcessFilters
+    set lists $ProcessPackageList
     menu $m -tearoff 0
     menu $m.plist -tearoff 0
     $m add cascade -menu $m.plist -label "Add Process Filter"
     $m add separator
-    set lists [getProcessPackageList]
-    updateProcessFilters
     set cnt 0
     set mod 31
     set mx $m.plist
@@ -1629,7 +1631,7 @@ proc showProcessList {w} {
 }
 
 proc processFilter {w action {alist ""}} {
-  global ProcessFilters ProcessFilterList
+  global ProcessFilters
   puts "processFilter $action $alist"
   if {"$action" == "clear"} {
     set ProcessFilters ""
@@ -1642,35 +1644,35 @@ proc processFilter {w action {alist ""}} {
        lappend ProcessFilters "$alist"
     }
   }
-  updateProcessFilterList
+  updateProcessFilterExpression
 }
 
-proc updateProcessFilterList {} {
-  global ProcessFilters ProcessFilterList
+proc updateProcessFilterExpression {} {
+  global ProcessFilters ProcessFilterExpression
   set plist ""
   foreach onep $ProcessFilters {
     append plist "|[lindex $onep 0]"
   }
-  set ProcessFilterList [string range $plist 1 end]
+  set ProcessFilterExpression [string range $plist 1 end]
   updateProcessFilterStatus normal
 }
 
 proc updateProcessFilterStatus {status} {
-  global ProcessFilters ProcessFilterList wProcessFilter wProcessAndOr
+  global ProcessFilters ProcessFilterExpression wProcessFilter wProcessAndOr
   set w $wProcessFilter
-# puts "updateProcessFilterStatus plist: $ProcessFilterList status: $status"
+# puts "updateProcessFilterStatus plist: $ProcessFilterExpression status: $status"
   $w config -state $status
   $wProcessAndOr config -state $status
 
-  set lcnt [llength $ProcessFilterList]
+  set lcnt [llength $ProcessFilterExpression]
   if {$status == "normal"} {
     if {$lcnt > 0} {
-      set status "$ProcessFilterList"
+      set status "$ProcessFilterExpression"
     } elseif {$lcnt == 0} {
       set status "select..."
     }
   } else {
-      set status "$ProcessFilterList : $status"
+      set status "$ProcessFilterExpression : $status"
   }
   $w config -text $status
 }
@@ -1687,7 +1689,7 @@ proc changeProcessTagComplex {w} {
 }
 
 proc updateProcessTagFilter {isFileSource} {
-    global ProcessAndOrTag ProcessFilterList TagFilter ProcessTagFilter
+    global ProcessAndOrTag ProcessFilterExpression TagFilter ProcessTagFilter
     set filter ""
     set tfilter ""
     if {$TagFilter != ""} {
@@ -1699,15 +1701,15 @@ proc updateProcessTagFilter {isFileSource} {
         }
         set filter "/$filter/"
     } elseif {$ProcessAndOrTag == "or"} {
-        if {$ProcessFilterList != ""} {
-            append filter "|$ProcessFilterList"
+        if {$ProcessFilterExpression != ""} {
+            append filter "|$ProcessFilterExpression"
         }
         if {$tfilter != ""} {
             append filter "|$tfilter"
         }
         set filter "/[string range $filter 1 end]/"
     } elseif {$ProcessAndOrTag == "and"} {
-        set filter "/$ProcessFilterList/ && /$tfilter/"
+        set filter "/$ProcessFilterExpression/ && /$tfilter/"
     }
     set ProcessTagFilter "$filter"
 }
