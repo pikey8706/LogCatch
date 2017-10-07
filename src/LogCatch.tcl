@@ -1585,19 +1585,17 @@ proc updateProcessFilters {} {
       if {$pidx >= 0} {
         set blist [lindex $ProcessPackageList $pidx]
         set newP [lindex $blist 0]
-	if {[lsearch -index 0 "ProcessFilters $ProcessFiltersOld" $newP] == -1} {
+	if {[lsearch -index 0 $pFilters $newP] == -1} {
 	    lappend pFilters $blist
 	}
-        puts "updateProcessFilters oldProcess: $p newProcess: $newP newlist: $blist"
-	if {$newP != $p} {
-	    lappend oldFilters $alist
-	} else {
+        if {$newP != $p} {
+            puts "updateProcessFilters oldProcess: $p newProcess: $newP newlist: $blist"
+            lappend oldFilters $alist
         }
-#        append pFilterList "|$newP"
       } else {
-	# dead process
-	puts "updateProcessFilters oldProcess: $pkg probably dead !"
-	lappend oldFilters $alist
+          # dead process
+	  puts "updateProcessFilters oldProcess: $pkg probably dead !"
+	  lappend oldFilters $alist
       }
     }
 puts "oldFilters: $oldFilters"
@@ -1632,10 +1630,16 @@ proc showProcessList {w} {
 	$mx add command -label "$alist" -command "processFilter $w add \"$alist\""
     }
     set x 0
-    foreach alist "$ProcessFilters $ProcessFiltersOld" {
+    foreach alist "$ProcessFilters" {
 	menu $m.desel$x -tearoff 0
-	$m.desel$x add command -label deselect -command "processFilter $w del \"$alist\""
+	$m.desel$x add command -label deselect -command "processFilter $w del \"$alist\" ALIVE"
 	$m add cascade -menu $m.desel$x -label "$alist"
+	incr x
+    }
+    foreach alist "$ProcessFiltersOld" {
+	menu $m.desel$x -tearoff 0
+	$m.desel$x add command -label deselect -command "processFilter $w del \"$alist\" DEAD"
+	$m add cascade -menu $m.desel$x -label "$alist (DEAD)"
 	incr x
     }
     $m add separator
@@ -1645,15 +1649,23 @@ proc showProcessList {w} {
     tk_popup $m $x $y
 }
 
-proc processFilter {w action {alist ""}} {
-  global ProcessFilters
-  puts "processFilter $action $alist"
+proc processFilter {w action {alist ""} {which ""}} {
+  global ProcessFilters ProcessFiltersOld
+  puts "processFilter $action $alist $which"
   if {"$action" == "clear"} {
     set ProcessFilters ""
+    set ProcessFiltersOld ""
   } else {
-    set idx [lsearch -index 1 $ProcessFilters [lindex $alist 1]]
-    if {$idx >= 0} {
-      set ProcessFilters [lreplace $ProcessFilters $idx $idx ]
+    if {"$which" == "ALIVE"} {
+        set idx [lsearch -index 1 $ProcessFilters [lindex $alist 1]]
+        if {$idx >= 0} {
+            set ProcessFilters [lreplace $ProcessFilters $idx $idx ]
+        }
+    } elseif {"$which" == "DEAD"} {
+        set idx [lsearch -index 1 $ProcessFiltersOld [lindex $alist 1]]
+        if {$idx >= 0} {
+            set ProcessFiltersOld [lreplace $ProcessFiltersOld $idx $idx ]
+        }
     }
     if {"$action" == "add"} {
        lappend ProcessFilters "$alist"
