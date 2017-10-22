@@ -490,7 +490,7 @@ proc changeFontSize {fName fSize {delta 0}} {
   upvar $fName fontName $fSize fontSize
   if {$delta > 0} {
     incr fontSize
-  } elseif {$delta < 0} {
+  } elseif {$delta < 0 && fontSize > 1} {
     incr fontSize -1
   }
   font config $fontName -size $fontSize
@@ -1581,21 +1581,27 @@ proc updateProcessFilters {} {
       set idx [lsearch -index 0 "$ProcessFilters $ProcessFiltersOld" $p]
       set alist [lindex "$ProcessFilters $ProcessFiltersOld" $idx]
       set pkg [lindex $alist 1]
-      set pidx [lsearch -index 1 $ProcessPackageList $pkg]
-      if {$pidx >= 0} {
-        set blist [lindex $ProcessPackageList $pidx]
-        set newP [lindex $blist 0]
-	if {[lsearch -index 0 $pFilters $newP] == -1} {
-	    lappend pFilters $blist
-	}
-        if {$newP != $p} {
-            puts "updateProcessFilters oldProcess: $p newProcess: $newP newlist: $blist"
-            lappend oldFilters $alist
-        }
+      set label [lindex $alist 2]
+      if {"$label" == "(DEAD)"} {
+          puts "updateProcessFilters oldProcess: $p keep $alist"
+          lappend oldFilters $alist
       } else {
-          # dead process
-	  puts "updateProcessFilters oldProcess: $pkg probably dead !"
-	  lappend oldFilters $alist
+          set pidx [lsearch -index 1 $ProcessPackageList $pkg]
+          if {$pidx >= 0} {
+              set blist [lindex $ProcessPackageList $pidx]
+              set newP [lindex $blist 0]
+	      if {[lsearch -index 0 $pFilters $newP] == -1} {
+	          lappend pFilters $blist
+                  if {$newP != $p} {
+                      puts "updateProcessFilters oldProcess: $p newProcess: $newP newlist: $blist"
+                      lappend oldFilters "$alist (DEAD)"
+                  }
+	      }
+          } else {
+              # dead process
+	      puts "updateProcessFilters oldProcess: $pkg probably dead !"
+	      lappend oldFilters "$alist (DEAD)"
+          }
       }
     }
 puts "oldFilters: $oldFilters"
@@ -1639,7 +1645,7 @@ proc showProcessList {w} {
     foreach alist "$ProcessFiltersOld" {
 	menu $m.desel$x -tearoff 0
 	$m.desel$x add command -label deselect -command "processFilter $w del \"$alist\" DEAD"
-	$m add cascade -menu $m.desel$x -label "$alist (DEAD)"
+	$m add cascade -menu $m.desel$x -label "$alist"
 	incr x
     }
     $m add separator
