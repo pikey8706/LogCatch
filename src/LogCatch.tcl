@@ -490,7 +490,7 @@ proc changeFontSize {fName fSize {delta 0}} {
   upvar $fName fontName $fSize fontSize
   if {$delta > 0} {
     incr fontSize
-  } elseif {$delta < 0 && fontSize > 1} {
+  } elseif {$delta < 0 && $fontSize > 1} {
     incr fontSize -1
   }
   font config $fontName -size $fontSize
