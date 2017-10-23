@@ -1472,7 +1472,9 @@ proc saveLines {{which "all"}} {
     if {[file exist $lastLoadedFile]} {
         set dir [file dirname $lastLoadedFile]
     }
-    set filename [tk_getSaveFile -parent . -initialdir $dir]
+    set ftypes {{"Text files" ".txt"} {"Log files" ".log"}}
+    set default_exete ".txt"
+    set filename [tk_getSaveFile -parent . -initialdir $dir -filetypes $ftypes -defaultextension $default_exete]
     if {$filename == ""} {
        return
     }
