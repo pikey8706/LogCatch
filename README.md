@@ -28,6 +28,7 @@ I recommed to install msys-git. This contains git, bash, awk, wish.
 ## Install
 Linux:
 pacman -S awk tk android-tools
+apt-get install awk tk android-tools
 
 Mac:
 prepare android-sdk
@@ -42,7 +43,7 @@ To boot app
 
 Linux/Mac user
 <pre>
-wish LogCatch.tcl
+wish src/LogCatch.tcl --dir src
 </pre>
 
 Windows user
@@ -54,7 +55,7 @@ Assuming you have done installed msys-git.
 - click Git bash (Here) menu.
 - type below in bash window.
 <pre>
-wish LogCatch.tcl
+wish src/LogCatch.tcl --dir src
 </pre>
 - Or simply double click logcatch.vbs in the folder.
 - Please create shortcut lancher by yourself.
@@ -70,6 +71,3 @@ To see log from devices after app launched, do below please.
 Author:
 Hirohito Sasaki
 email: pikey8706@gmail.com
-
-Icon-Author:
-Designed by Freepik
