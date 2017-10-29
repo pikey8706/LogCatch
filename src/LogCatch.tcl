@@ -49,6 +49,7 @@ set ProcessPackageList ""
 set ProcessFilters ""
 set ProcessFiltersOld ""
 set ProcessFilterExpression ""
+set FilterDeadProcess 1; # 0: none, 1: only the latest dead process, -1: all the dead processes
 set ProcessAndOrTag "or"
 set ProcessTagFilter ""
 set TagFilter ""
@@ -823,7 +824,7 @@ proc loadPreference {} {
 
 proc saveLastState {} {
     global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace \
-TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogViewFontSize
+TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogViewFontSize FilterDeadProcess
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
     if {! [file isdirectory $dir]} {
@@ -880,6 +881,8 @@ TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogVi
             puts $fdW $LogViewFontName
             puts $fdW ":LogViewFontSize"
             puts $fdW $LogViewFontSize
+            puts $fdW ":FilterDeadProcess"
+            puts $fdW $FilterDeadProcess
 	    puts $fdW ":"
         close $fdW
     }
@@ -887,7 +890,7 @@ TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogVi
 
 proc loadLastState {} {
     global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace TagFilter
-    global hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogViewFontSize
+    global hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogViewFontSize FilterDeadProcess
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
     if {! [file isdirectory $dir]} {
@@ -944,6 +947,8 @@ proc loadLastState {} {
 		      set flag 20
                    } elseif {[string match ":LogViewFontSize" $line]} {
 		      set flag 21
+                   } elseif {[string match ":FilterDeadProcess" $line]} {
+		      set flag 22
                    } else {
 		      set flag 0
                    }
@@ -989,6 +994,8 @@ proc loadLastState {} {
 		   set LogViewFontName $line
                 } elseif {$flag == 21} { 
 		   set LogViewFontSize $line
+                } elseif {$flag == 22} { 
+           set FilterDeadProcess $line
 		} else {
                 }
         }
@@ -1563,11 +1570,12 @@ proc getProcessPackageList {} {
             append serial ":$port"
         }
         if {$serial != ""} {
-	    foreach {pId pkgName uName} [exec $ADB_PATH -s $serial shell ps | awk "/^u0|^app/ {print \$2, \$9, \$1}"] {
-		lappend lists "[format " %5d %s" $pId $pkgName]"
-	    }
-	}
-	set lists [lsort -dictionary -index 1 -incr $lists] 
+            foreach {pId pkgName uName} [exec $ADB_PATH -s $serial shell ps | awk "/^u0|^app/ {print \$2, \$9, \$1}"] {
+            lappend lists "[format "%5d %s" $pId $pkgName]"
+            # puts "[format "%5d %s" $pId $pkgName]"
+        }
+    }
+    set lists [lsort -dictionary -index 1 -incr $lists] 
    }
    set ProcessPackageList $lists
    return $lists
@@ -1575,48 +1583,49 @@ proc getProcessPackageList {} {
 
 proc updateProcessFilters {} {
     global ProcessPackageList ProcessFilters ProcessFilterExpression \
-	ProcessFiltersOld
+    ProcessFiltersOld FilterDeadProcess
     set pFilters ""
     set oldFilters ""
     getProcessPackageList
-    foreach p [split $ProcessFilterExpression "|"] {
-      set idx [lsearch -index 0 "$ProcessFilters $ProcessFiltersOld" $p]
-      set alist [lindex "$ProcessFilters $ProcessFiltersOld" $idx]
-      set pkg [lindex $alist 1]
-      set label [lindex $alist 2]
-      if {"$label" == "(DEAD)"} {
-          puts "updateProcessFilters oldProcess: $p keep $alist"
-          lappend oldFilters $alist
-      } else {
-          set pidx [lsearch -index 1 $ProcessPackageList $pkg]
-          if {$pidx >= 0} {
-              set blist [lindex $ProcessPackageList $pidx]
-              set newP [lindex $blist 0]
-	      if {[lsearch -index 0 $pFilters $newP] == -1} {
-	          lappend pFilters $blist
-                  if {$newP != $p} {
-                      puts "updateProcessFilters oldProcess: $p newProcess: $newP newlist: $blist"
-                      lappend oldFilters "$alist (DEAD)"
-                  }
-	      }
-          } else {
-              # dead process
-	      puts "updateProcessFilters oldProcess: $pkg probably dead !"
-	      lappend oldFilters "$alist (DEAD)"
-          }
-      }
+    foreach alist "$ProcessFilters $ProcessFiltersOld" {
+        set newP ""
+        set p [lindex $alist 0]
+        set pkg [lindex $alist 1]
+        set label [lindex $alist 2]
+        # check new process already added to pFilters
+        set pkgIdx [lsearch -index 1 $pFilters $pkg]
+        if {$pkgIdx == -1} {
+            set newPkgIdx [lsearch -index 1 $ProcessPackageList $pkg]
+            if {$newPkgIdx >= 0} {
+                # There is an alive process of pkg
+                set blist [lindex $ProcessPackageList $newPkgIdx]
+                set newP [lindex $blist 0]
+                lappend pFilters $blist
+                puts "updateProcessFilters newProcess: $alist"
+            }
+        }
+        if {$newP == "" ||
+            $FilterDeadProcess && $newP != $p} {
+            # newP == "" : There is no new process. Keep dead process.
+            # FilterDeadProcess && newP != p  : newP is new process of dead process p.
+            set pkgIdx [lsearch -index 1 $oldFilters $pkg]
+            if {$pkgIdx == -1 || $FilterDeadProcess == -1} {
+                lappend oldFilters "[format "%5d %s %s" $p $pkg "(DEAD)"]"
+                puts "updateProcessFilters oldProcess: $alist"
+            }
+        }
     }
-puts "oldFilters: $oldFilters"
+    puts "oldFilters: $oldFilters"
     set ProcessFiltersOld $oldFilters
     set ProcessFilters $pFilters
     updateProcessFilterExpression
 }
 
 proc showProcessList {w} {
-    global ProcessPackageList ProcessFilters ProcessFiltersOld
+    global ProcessPackageList ProcessFilters ProcessFiltersOld FilterDeadProcess
     set m .processlist
-    if {[winfo exist $m]} {
-      destroy $m
+    if {[winfo exists $m]} {
+        destroy $m
     }
     updateProcessFilters
     set lists $ProcessPackageList
@@ -1626,16 +1635,16 @@ proc showProcessList {w} {
     $m add separator
     set cnt 0
     set mod 31
-    set mx $m.plist
+    set mpl $m.plist
     foreach alist $lists {
-	incr cnt
-	if {[expr $cnt % $mod] == 0} {
-   	   menu $mx.plist -tearoff 0
-	   $mx add cascade -menu $mx.plist -label "More.."
-	   set mx $mx.plist
+        incr cnt
+        if {[expr $cnt % $mod] == 0} {
+       	    menu $mpl.plist -tearoff 0
+            $mpl add cascade -menu $mpl.plist -label "More.."
+            set mpl $mpl.plist
         }
-	set pId [lindex $alist 0]
-	$mx add command -label "$alist" -command "processFilter $w add \"$alist\""
+        set pId [lindex $alist 0]
+        $mpl add command -label "$alist" -command "processFilter $w add \"$alist\""
     }
     set x 0
     foreach alist "$ProcessFilters" {
@@ -1650,6 +1659,12 @@ proc showProcessList {w} {
 	$m add cascade -menu $m.desel$x -label "$alist"
 	incr x
     }
+    $m add separator
+    menu $m.menu_dead_process -tearoff 0
+    $m.menu_dead_process add radio -label "None" -variable FilterDeadProcess -value 0
+    $m.menu_dead_process add radio -label "Latest one" -variable FilterDeadProcess -value 1
+    $m.menu_dead_process add radio -label "All" -variable FilterDeadProcess -value -1
+    $m add cascade -label "Keep filtering \"DEAD\" processes" -menu $m.menu_dead_process
     $m add separator
     $m add command -label "Clear All Process Filter" -command "processFilter $w clear"
     set x [winfo rootx $w]
