@@ -94,7 +94,7 @@ set Editor ""
 set ClearAuto none
 
 # Menu Face
-set MenuFace bar; # bar button both
+set MenuFace button; # bar button both
 
 # Font fot logview
 set LogViewFontName TkFixedFont
@@ -185,10 +185,11 @@ menu .mbar.i.f
 
 # Top frame
 set t [frame .top ];#-bg pink]
-pack $t -side top -fill x
+pack $t -side top -fill x -padx 5
 #pack [button $t.rec -text Rec] -side left
 #image create photo menu_icon -file menu.gif
 button $t.menu -text Menus -command "menuLogcatch $t.menu" ;# -image menu_icon
+pack $t.menu -side left
 
 proc menuLogcatch {w} {
     set m .logcatchmenu
@@ -223,29 +224,32 @@ proc showPreferences {} {
     pack [label $w.f2.menubarormenubutton -text "Menu Face: "] -side left
     pack [radiobutton $w.f2.menubar -text "Menubar" -value bar -variable MenuFace -command "changeMenuFace"] -side left
     pack [radiobutton $w.f2.menubutton -text "MenuButton" -value button -variable MenuFace -command "changeMenuFace"] -side left
+    pack [radiobutton $w.f2.menuboth -text "MenuBar and MenuButton" -value both -variable MenuFace -command "changeMenuFace"] -side left
 }
 
 proc changeMenuFace {args} {
     global MenuFace
+    puts "changeMenuFace $MenuFace"
+    pack forget .top.menu .top.sources
     if {$MenuFace == "bar"} {
         . config -menu .mbar
-        pack forget .top.menu
+        pack .top.sources -side left
     } elseif {$MenuFace == "button"} {
         . config -menu ""
-        pack .top.menu -side right
+        pack .top.menu -side left
+        pack .top.menu .top.sources -side left
     } elseif {$MenuFace == "both"} {
-        # button case.
         . config -menu .mbar
-        pack .top.menu -side right
+        pack .top.menu .top.sources -side left
     }
 }
 
 proc showHistoryBrowser {} {
 
 }
-
 #pack [button $t.clr -text "Clear Log" -command clearLogView -padx 20] -side right
-pack [labelframe $t.sources -text "Source" -labelanchor w] -side left
+pack [labelframe $t.sources -text "Source: " -labelanchor w] -side left
+changeMenuFace
 
 # pane
 frame .p ;#-bg "#ff0000"
@@ -999,10 +1003,10 @@ proc loadLastState {} {
 		} else {
                 }
         }
-	close $fd
-	updateLoadedFiles
-	changeWrapMode
-	changeEncoding
+        close $fd
+        updateLoadedFiles
+        changeWrapMode
+        changeEncoding
         changeMenuFace
         changeFontSize LogViewFontName LogViewFontSize
     }
