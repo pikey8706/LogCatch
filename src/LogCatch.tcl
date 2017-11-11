@@ -116,14 +116,14 @@ proc setEditor {} {
     }
     # default for each platform
     if {$Editor == ""} {
-       if {$OS == "Darwin"} {
-	  set Editor TextEdit
-       } elseif {$OS == "Linux"} {
-	  set Editor Nano
-       } else {
-	  set Editor Notepad
-       }
-   }
+        if {$OS == "Darwin"} {
+            set Editor "/Applications/TextEdit.app"
+        } elseif {$OS == "Linux"} {
+            set Editor nano
+        } else {
+            set Editor Notepad
+        }
+    }
 }
 
 # Windows
@@ -211,20 +211,29 @@ proc menuLogcatch {w} {
 proc showPreferences {} {
     global ADB_PATH MenuFace
     set w .preferences
+    if {[winfo exists $w]} {
+        raise $w
+        return
+    }
     toplevel $w
     wm title $w "Preferences"
     wm protocol $w WM_DELETE_WINDOW "destroy $w"
+    wm transient $w .
     pack [frame $w.bottom -relief raised] -fill x -expand yes -side bottom -anchor s
     pack [button $w.bottom.close -text Close -command "destroy $w"] -side right
     pack [frame $w.f1] -fill x
     pack [label $w.f1.adblocationlabel -text "ADB_PATH : "] -side left
     pack [label $w.f1.adblocation -text "$ADB_PATH"] -side left
-    pack [button $w.f1.changeadblocation -text "Change" -command "getAdbPath $w.f1.adblocation"] -side right
+    pack [button $w.f1.changeadblocation -text "Change" -command "getAdbPath $w $w.f1.adblocation"] -side right
     pack [frame $w.f2] -fill x
     pack [label $w.f2.menubarormenubutton -text "Menu Face: "] -side left
     pack [radiobutton $w.f2.menubar -text "Menubar" -value bar -variable MenuFace -command "changeMenuFace"] -side left
     pack [radiobutton $w.f2.menubutton -text "MenuButton" -value button -variable MenuFace -command "changeMenuFace"] -side left
     pack [radiobutton $w.f2.menuboth -text "MenuBar and MenuButton" -value both -variable MenuFace -command "changeMenuFace"] -side left
+    pack [frame $w.f3] -fill x
+    pack [label $w.f3.editorlabel -text "External Editor Path: "] -side left
+    pack [entry $w.f3.editorentry -textvariable Editor] -side left -fill x -expand yes
+    pack [button $w.f3.editorpath -text "Browse" -command "changeEditor $w"] -side right
 }
 
 proc changeMenuFace {args} {
@@ -244,9 +253,21 @@ proc changeMenuFace {args} {
     }
 }
 
+proc changeEditor {w} {
+    global Editor
+    set path [tk_getOpenFile -parent $w]
+    puts "changeEditor $path"
+    if { ([file isdirectory "$path"] &&
+    ([string match "*.app" "$path"] || [string match "*.app/" "$path"])) ||
+    [file executable "$path"]} {
+        set Editor "$path"
+    }
+}
+
 proc showHistoryBrowser {} {
 
 }
+
 #pack [button $t.clr -text "Clear Log" -command clearLogView -padx 20] -side right
 pack [labelframe $t.sources -text "Source: " -labelanchor w] -side left
 changeMenuFace
@@ -620,8 +641,8 @@ puts \"$filename\"
 	clearHighlightAll
 	openSource
     } else {
-puts not\ radable
-}
+        puts "not readable"
+    }
 }
 
 proc addLoadedFiles {filename} {
@@ -1865,11 +1886,16 @@ proc listOtherDevices {w} {
 
 proc openEditor {} {
     global LoadFile Editor OS
-    if {$Editor != "" && [file readable $LoadFile]} {
-       if {$OS == "Darwin"} {
-           after 100 "exec open -a $Editor $LoadFile &"
+    set editor [escapeSpace $Editor]
+    puts "Editor: $editor, LoadFile: $LoadFile"
+    if {[file readable $Editor] && [file readable $LoadFile]} {
+        if {$OS == "Darwin" && [file isdirectory $Editor] &&
+         ([string match "*.app" "$Editor"] || [string match "*.app/" "$Editor"])} {
+            after 100 "exec open -a $editor $LoadFile &"
+        } elseif {[file executable "$editor"]} {
+            after 100 "exec $editor $LoadFile &"
         } else {
-	   after 100 "exec $Editor $LoadFile &"
+            puts "No executable editor."
         }
     }
 }
@@ -1972,9 +1998,13 @@ proc checkAdbPath {{w ""} {w2 ""} args} {
     return $statusConst
 }
 
-proc getAdbPath {{w2 "none"}} {
+proc getAdbPath {{parentWin ""} {w2 "none"}} {
     global SDK_PATH NO_ADB
-    set w .sdkpath
+    set w "${parentWin}.sdkpath"
+    if [winfo exist $w] {
+        raise $w
+        return
+    }
     toplevel $w
     wm title $w "Setup ADB_PATH"
     wm transient $w .
@@ -1996,7 +2026,7 @@ proc getAdbPath {{w2 "none"}} {
     pack [set ws2 [frame  $w.statussdk -relief ridge]] -fill x -expand yes
     pack [label $ws2.msg -text "status of SDK path:"] -side left
     pack [label $ws2.val] -side left
-    pack [checkbutton $w.later -text "Setup ADB_PATH Later" -variable NO_ADB] -side bottom
+    pack [checkbutton $w.later -text "Setup ADB_PATH later" -variable NO_ADB] -side bottom
 #   set SDK_PATH ""
 #   set ADB_PATH ""
     checkAdbPath $w
@@ -2026,8 +2056,9 @@ if {!$NO_ADB} {
        puts "ADB_PATH already confirmed."
        return
     }
-    getAdbPath
+    updateSourceList
+    after 2000 getAdbPath
 }
-
+setEditor
 #getProcessPackageList
 
