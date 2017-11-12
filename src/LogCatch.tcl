@@ -16,7 +16,7 @@ set ADB_PATH ""
 set NO_ADB 0
 set CONST_MODEL "ro.product.model"
 set CONST_VERSION "ro.build.version.release"
-set CONST_ENCODING "utf-8"
+set CONST_DEFAULT_ENCODING "utf-8"
 set LogTypes "brief process tag thread raw time threadtime long"
 set Devices ""
 set Device ""
@@ -44,7 +44,7 @@ set PLATFORM $tcl_platform(platform)
 # set EndLabel "--- End Of File reached ---\n"
 set ReadingLabel "Reading..."
 set EOFLabel "End Of File"
-set Encoding $CONST_ENCODING
+set Encoding $CONST_DEFAULT_ENCODING
 set ProcessPackageList ""
 set ProcessFilters ""
 set ProcessFiltersOld ""
@@ -639,6 +639,7 @@ puts \"$filename\"
 	addLoadedFiles $filename
 	clearSearchAll
 	clearHighlightAll
+    changeEncoding
 	openSource
     } else {
         puts "not readable"
@@ -666,22 +667,23 @@ proc updateLoadedFiles {} {
     .mbar.i.f add command -label "Garbage History" -command "garbageHistory"
     .mbar.i.f add separator
     foreach afile $LoadedFiles {
-	.mbar.i.f add radiobutton -label $afile -variable Device -value "file:$afile" -command "loadFile $afile"
+        .mbar.i.f add radiobutton -label $afile -variable Device -value "file:$afile" -command "loadFile $afile"
     }
     updateSourceList
 }
 
 proc loadDevice {} {
-    global Devices Device
+    global Devices Device Encoding CONST_DEFAULT_ENCODING
     set devices $Device
     foreach xdevice $Devices {
-	if {![string match $Device $xdevice]} {
-	   lappend devices $xdevice
-	}
+        if {![string match $Device $xdevice]} {
+            lappend devices $xdevice
+        }
     }
     set Devices $devices
     updateSourceList
     updateProcessFilters
+    changeEncoding $CONST_DEFAULT_ENCODING disabled
     openSource
 }
 
@@ -704,40 +706,50 @@ puts "changeWrapMode $WrapMode"
 }
 wrapMenu
 
-proc encodingMenu {} {
-  global Encoding Codes runDir
-  set defaultCode "utf-8"
-  set lists [lsort [encoding names]]
-  set defIdx [lsearch $lists $defaultCode]
-  set m .encodings
-  menu $m -tearoff 0
-  if {$defIdx > -1} {
-     $m add radiobutton -label "Default: $defaultCode" -value $defaultCode -variable Encoding -command changeEncoding
-     $m add separator
-  }
-  source $runDir/codes.tcl
-  set group [lsort [array names Codes]]
-  foreach one $group {
-    set gmenu $m.[string tolower $one]
-    menu $gmenu -tearoff 0
-    $m add cascade -menu $gmenu -label "$one"
-    foreach two $lists {
-      set idx [lsearch $Codes($one) $two]
-      if {$idx > -1} {
-        $gmenu add radiobutton -label "$two" -value $two -variable Encoding -command changeEncoding
-      }
+proc encodingMenu {{state "normal"}} {
+    global Encoding Codes runDir
+    set m .encodings
+    if {[winfo exists $m] == 0} {
+        menu $m -tearoff 0
+        set defaultCode "utf-8"
+        set lists [lsort [encoding names]]
+        set defIdx [lsearch $lists $defaultCode]
+        if {$defIdx > -1} {
+            $m add radiobutton -label "Default: $defaultCode" -value $defaultCode -variable Encoding -command "changeEncoding ; openSource"
+            $m add separator
+        }
+        source $runDir/codes.tcl
+        set group [lsort [array names Codes]]
+        foreach one $group {
+            set gmenu $m.[string tolower $one]
+            menu $gmenu -tearoff 0
+            $m add cascade -menu $gmenu -label "$one"
+            foreach two $lists {
+                set idx [lsearch $Codes($one) $two]
+                if {$idx > -1} {
+                    $gmenu add radiobutton -label "$two" -value $two -variable Encoding -command "changeEncoding ; openSource"
+                }
+            }
+        }
     }
-
-  }
-  bind .b.encode <1> "tk_popup $m %X %Y"
+    if {"$state" == "normal"} {
+        bind .b.encode <1> "tk_popup $m %X %Y"
+    } elseif {"$state" == "disabled"} {
+        bind .b.encode <1> ""
+    }
 }
 
-proc changeEncoding {} {
-  global Encoding
-  encoding system $Encoding
-  .b.encode config -text "encoding: $Encoding"
-  update idletasks
-  puts "changeEncoding to :${Encoding}:"
+proc changeEncoding {{encoding ""} {state "normal"}} {
+    global Encoding
+    if {"$encoding" == ""} {
+        set encoding $Encoding
+    }
+    encoding system $encoding
+    .b.encode config -text "encoding: $encoding"
+    .b.encode config -state $state
+    encodingMenu $state
+    update idletasks
+    puts "changeEncoding to :${encoding}:"
 }
 
 encodingMenu
