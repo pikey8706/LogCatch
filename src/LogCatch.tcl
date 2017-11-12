@@ -673,7 +673,7 @@ proc updateLoadedFiles {} {
 }
 
 proc loadDevice {} {
-    global Devices Device Encoding CONST_DEFAULT_ENCODING
+    global Devices Device Encoding CONST_DEFAULT_ENCODING ADB_PATH
     set devices $Device
     foreach xdevice $Devices {
         if {![string match $Device $xdevice]} {
@@ -682,6 +682,9 @@ proc loadDevice {} {
     }
     set Devices $devices
     updateSourceList
+    set serial [getSerial $Device]
+    puts "device device: $Device serial: $serial"
+    exec $ADB_PATH -s $serial wait-for-device
     updateProcessFilters
     changeEncoding $CONST_DEFAULT_ENCODING disabled
     openSource
@@ -1533,53 +1536,57 @@ proc saveLines {{which "all"}} {
 }
 
 proc getModel {device} {
-   global CONST_MODEL CONST_VERSION ADB_PATH
-   set model [exec $ADB_PATH -s $device shell getprop $CONST_MODEL]
-   set m ""
-   foreach word $model {
-     append m $word
-   }
-   set model $m
-   set osversion [lindex [exec $ADB_PATH -s $device shell getprop $CONST_VERSION] 0]
-   puts "\"$osversion\":$device\""
-   return ${model}/${osversion}
+    global CONST_MODEL CONST_VERSION ADB_PATH
+    set model [exec $ADB_PATH -s $device shell getprop $CONST_MODEL]
+    set m ""
+    foreach word $model {
+        append m $word
+    }
+    set model $m
+    set osversion [lindex [exec $ADB_PATH -s $device shell getprop $CONST_VERSION] 0]
+    puts "\"$osversion\":$device\""
+    return ${model}/${osversion}
 }
 
 proc getDevices {} {
-  global Devices ADB_PATH
-  set devices ""
-  if {![checkAdbPath]} {
-      getAdbPath
-      return
-  }
-  foreach line [lrange [split [exec $ADB_PATH devices -l] \n] 1 end] {
-      set serial [lindex $line 0]
-      set model "null"
-      foreach one $line {
-	  foreach {key val} [split $one :] {
-              if {$key == "model"} {
-                  set model $val
-		  break
-              }
-	  }
-      }
-      if {$model != "null" || [lindex $line 1] == "device"} {
-#	  if {$model == "null"} {
-             set model [getModel $serial]
-#          }
-	  lappend devices "$model:$serial"
-      }
-  }
-  set Devices $devices
-  return $devices
+    global Devices ADB_PATH
+    set devices ""
+    if {![checkAdbPath]} {
+        getAdbPath
+        return $devices
+    }
+    set errStatus [catch {exec $ADB_PATH devices -l} device_list]
+    if {!$errStatus} {
+        foreach line [lrange [split $device_list "\n"] 1 end] {
+            set serial [lindex $line 0]
+            set model "null"
+            foreach one $line {
+                foreach {key val} [split $one :] {
+                    if {$key == "model"} {
+                        set model $val
+                        break
+                    }
+                }
+            }
+            if {$model != "null" || [lindex $line 1] == "device"} {
+            # if {$model == "null"} {
+                set model [getModel $serial]
+            # }
+                lappend devices "$model:$serial"
+            }
+        }
+        set Devices $devices
+    }
+    return $devices
 }
 
 proc getSerial {device {lower 0}} {
-  if {$lower} {
-    return [string tolower [lindex [split $device :] 1]]
-  } else {
-    return [lindex [split $device :] 1]
-  }
+    set rawSerial [lindex [split $device ":"] 1]
+    if {$lower} {
+        return [string tolower $rawSerial]
+    } else {
+        return $rawSerial
+    }
 }
 
 proc detectDevices {} {
@@ -1608,14 +1615,17 @@ proc getProcessPackageList {} {
         }
         if {$serial != ""} {
             foreach {pId pkgName uName} [exec $ADB_PATH -s $serial shell ps | awk "/^u0|^app/ {print \$2, \$9, \$1}"] {
-            lappend lists "[format "%5d %s" $pId $pkgName]"
-            # puts "[format "%5d %s" $pId $pkgName]"
+                # puts "pId: $pId, pkgName: $pkgName, uName: $uName"
+                # puts "[format "%5d %s" $pId $pkgName]"
+                if {[string is integer "$pId"]} {
+                    lappend lists "[format "%5d %s" $pId $pkgName]"
+                }
+            }
         }
+        set lists [lsort -dictionary -index 1 -incr $lists] 
     }
-    set lists [lsort -dictionary -index 1 -incr $lists] 
-   }
-   set ProcessPackageList $lists
-   return $lists
+    set ProcessPackageList $lists
+    return $lists
 }
 
 proc updateProcessFilters {} {
