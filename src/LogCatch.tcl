@@ -1914,10 +1914,8 @@ proc openEditor {} {
         if {$OS == "Darwin" && [file isdirectory $Editor] &&
          ([string match "*.app" "$Editor"] || [string match "*.app/" "$Editor"])} {
             after 100 "exec open -a $editor $LoadFile &"
-        } elseif {[file executable "$editor"]} {
-            after 100 "exec $editor $LoadFile &"
         } else {
-            puts "No executable editor."
+            after 100 "exec $editor $LoadFile &"
         }
     }
 }
