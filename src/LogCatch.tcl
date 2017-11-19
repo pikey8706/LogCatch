@@ -42,6 +42,8 @@ set OS $tcl_platform(os)
 set PLATFORM $tcl_platform(platform)
 # set StartLabel "--- Start Viewing Log ---\n"
 # set EndLabel "--- End Of File reached ---\n"
+set WaitingLabel "Waiting..."
+set WaitingFd ""
 set ReadingLabel "Reading..."
 set EOFLabel "End Of File"
 set Encoding $CONST_DEFAULT_ENCODING
@@ -590,6 +592,7 @@ proc readLine {fd} {
         $logview config -state disabled
         $statusTwo config -text $EOFLabel -fg red
         closeFd
+        closeWaitingFd
         return
     }
 
@@ -641,6 +644,7 @@ proc loadFile {{filename ""}} {
         set LoadFile $filename
         set Device "file:$filename"
         addLoadedFiles $filename
+        closeWaitingFd
         clearSearchAll
         clearHighlightAll
         changeEncoding
@@ -677,7 +681,8 @@ proc updateLoadedFiles {} {
 }
 
 proc loadDevice {} {
-    global Devices Device Encoding CONST_DEFAULT_ENCODING ADB_PATH
+    global Devices Device Encoding ADB_PATH statusTwo WaitingLabel WaitingFd
+    closeWaitingFd
     set devices $Device
     foreach xdevice $Devices {
         if {![string match $Device $xdevice]} {
@@ -688,10 +693,32 @@ proc loadDevice {} {
     updateSourceList
     set serial [getSerial $Device]
     puts "device device: $Device serial: $serial"
-    exec $ADB_PATH -s $serial wait-for-device
+    $statusTwo config -text $WaitingLabel -fg orange
+    set WaitingFd [open "| $ADB_PATH -s $serial wait-for-device" "r"]
+    if {$WaitingFd != "" && [tell $WaitingFd] == -1} {
+        fileevent $WaitingFd r delayedOpenSource
+    }
+}
+
+proc delayedOpenSource {} {
+    global CONST_DEFAULT_ENCODING
+    puts "delayedOpenSource"
+    closeWaitingFd
+    # exec $ADB_PATH -s $serial wait-for-device
     updateProcessFilters
     changeEncoding $CONST_DEFAULT_ENCODING disabled
     openSource
+}
+
+proc closeWaitingFd {} {
+    global WaitingFd
+    puts "closeWaitingFd"
+    if {$WaitingFd != ""} {
+        fileevent $WaitingFd r ""
+        fconfigure $WaitingFd -blocking 0
+        close $WaitingFd
+        set WaitingFd ""
+    }
 }
 
 proc wrapMenu {} {
@@ -823,6 +850,7 @@ proc showAbout {} {
 proc safeQuit {} {
     catch {puts safequit} msg
     closeFd
+    closeWaitingFd
     saveLastState
     exit 0
 }
