@@ -4,9 +4,9 @@ exec wish "$0" -- "$@"
 
 set runDir [pwd]
 foreach {opt val} $argv {
-  if {"$opt" == "--dir"} {
-     set runDir $val
-  }
+    if {"$opt" == "--dir"} {
+        set runDir $val
+    }
 }
 
 # globals
@@ -99,10 +99,10 @@ set MenuFace button; # bar button both
 # Font fot logview
 set LogViewFontName TkFixedFont
 if {$OS == "Darwin"} {
-  proc tk::mac::Quit {} {
-      safeQuit
-  }
-  set LogViewFontName systemSystemFont
+    proc tk::mac::Quit {} {
+        safeQuit
+    }
+    set LogViewFontName systemSystemFont
 }
 
 # import essential command path
@@ -194,7 +194,7 @@ pack $t.menu -side left
 proc menuLogcatch {w} {
     set m .logcatchmenu
     if {[winfo exist $m]} {
-      destroy $m
+        destroy $m
     }
     menu $m -tearoff 0
     $m add command -label About -command "showAbout"
@@ -420,16 +420,16 @@ pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -side right
 
 # logview text/listbox
 if {1} {
-set LogView $r.l
-text $r.l -bg "#000000" -xscrollcommand "$r.s0 set" -yscrollcommand "$r.s1 set" -wrap $WrapMode
-scrollbar $r.s0 -orient horizontal -command "$r.l xview"
-scrollbar $r.s1 -command "$r.l yview"
-#grid $r.l -row 0 -column 0 -sticky nsew
-#grid $r.s0 -row 1 -column 0 -sticky ew
-#grid $r.s1 -row 0 -column 1 -sticky ns
-bind $LogView <1> "focus $LogView"
+    set LogView $r.l
+    text $r.l -bg "#000000" -xscrollcommand "$r.s0 set" -yscrollcommand "$r.s1 set" -wrap $WrapMode
+    scrollbar $r.s0 -orient horizontal -command "$r.l xview"
+    scrollbar $r.s1 -command "$r.l yview"
+    #grid $r.l -row 0 -column 0 -sticky nsew
+    #grid $r.s0 -row 1 -column 0 -sticky ew
+    #grid $r.s1 -row 0 -column 1 -sticky ns
+    bind $LogView <1> "focus $LogView"
 } else {
-listbox $r.l -bg "#eeeeee" ;#-width 200
+    listbox $r.l -bg "#eeeeee" ;#-width 200
 }
 pack $r.s1 -side right -anchor e -fill y
 pack $r.l -anchor e -fill both -expand yes
@@ -512,15 +512,15 @@ if {$OS == "Linux"} {
 }
 
 proc changeFontSize {fName fSize {delta 0}} {
-  global logview
-  upvar $fName fontName $fSize fontSize
-  if {$delta > 0} {
-    incr fontSize
-  } elseif {$delta < 0 && $fontSize > 1} {
-    incr fontSize -1
-  }
-  font config $fontName -size $fontSize
-# puts "$fontName $fontSize"
+    global logview
+    upvar $fName fontName $fSize fontSize
+    if {$delta > 0} {
+        incr fontSize
+    } elseif {$delta < 0 && $fontSize > 1} {
+        incr fontSize -1
+    }
+    font config $fontName -size $fontSize
+    # puts "$fontName $fontSize"
 }
 
 proc addCheckBtn {w ww text} {
@@ -528,8 +528,8 @@ proc addCheckBtn {w ww text} {
     if {$ww != ""} {
         #checkbutton $w.$ww -text $text -command "xmen"
         #pack $w.$ww -side top -anchor w
-	#$tagview window create end -window $w.$ww
-	$tagview insert end "$text"
+        #$tagview window create end -window $w.$ww
+        $tagview insert end "$text"
     }
 }
 
@@ -541,13 +541,13 @@ proc getTag {loglevel} {
     set index 0
     if {$loglevel == "V"} {
     } elseif {$loglevel == "D"} {
-	incr index
+        incr index
     } elseif {$loglevel == "I"} {
-	incr index 2
+        incr index 2
     } elseif {$loglevel == "W"} {
-	incr index 3
+        incr index 3
     } elseif {$loglevel == "E"} {
-	incr index 4
+        incr index 4
     }
     set LastLogLevel $loglevel
     return [lindex $tags $index]
@@ -557,61 +557,65 @@ proc logcat {{clear 1} fd {doFilter 0}} {
     global logview Device Fd LineCount TrackTail
 
     if {$Fd == ""} {
-       tk_messageBox -title "Error" -message "Failed to open log: $Device ." -type ok -icon error
-       return
+        tk_messageBox \
+        -title "Error" \
+        -message "Failed to open log: $Device ." \
+        -type ok \
+        -icon error
+        return
     }
 
     if {$clear == 1} {
-       clearLogView
+        clearLogView
     }
 
     if {[tell $Fd] == -1} {
-	# set focus to last entry
+        # set focus to last entry
         set last_w [focus -lastfor .]
         if {[winfo class $last_w] == "Entry"} {
             focus $last_w
         } else {
             focus .p.rf.filsi.ei
         }
-      # show logcat from not only device
+        # show logcat from not only device
         fileevent $Fd r "readLine $fd"
     }
 }
 
 proc readLine {fd} {
-     global logview LineCount statusOne statusTwo MaxRow TrackTail trackTailTask EndLabel EOFLabel
-     $logview config -state normal
-     if {[eof $fd]} {
-         #$logview insert end $EndLabel colorBlk
-	 $logview config -state disabled
-	 $statusTwo config -text $EOFLabel -fg red
-	 closeFd
-	 return
-     }
+    global logview LineCount statusOne statusTwo MaxRow TrackTail trackTailTask EndLabel EOFLabel
+    $logview config -state normal
+    if {[eof $fd]} {
+        #$logview insert end $EndLabel colorBlk
+        $logview config -state disabled
+        $statusTwo config -text $EOFLabel -fg red
+        closeFd
+        return
+    }
 
-     gets $fd line
+    gets $fd line
 
-     if {"$line" != ""} {
+    if {"$line" != ""} {
         set loglevel [getLogLevel "$line"]
-	set tag [getTag $loglevel]
-	incr LineCount
-	$logview insert end "$line\n" $tag
-	$logview config -state disabled
-	$statusOne config -text $LineCount
-	updateView
+        set tag [getTag $loglevel]
+        incr LineCount
+        $logview insert end "$line\n" $tag
+        $logview config -state disabled
+        $statusOne config -text $LineCount
+        updateView
     }
 }
 
 proc updateView {} {
     global trackTailTask LineCount
     if {"$trackTailTask" != ""} {
-	after cancel $trackTailTask
+        after cancel $trackTailTask
     }
     set trackTailTask [after 200 trackTail]
 
     # update idletasks
     if {$LineCount%200 == 0} {
-	update idletasks
+        update idletasks
     }
 }
 
@@ -620,27 +624,27 @@ source $runDir/logtype.tcl
 proc loadFile {{filename ""}} {
     global Fd PrevLoadFile LoadFile LoadedFiles Device LogType
     if {$filename == ""} {
-	set dir ~
-	if {$LoadFile != ""} {
-	    set dir [file dirname $LoadFile]
-	}
+        set dir ~
+        if {$LoadFile != ""} {
+            set dir [file dirname $LoadFile]
+        }
         set filename [tk_getOpenFile -parent . -initialdir $dir]
     }
-puts \"$filename\"
+    puts \"$filename\"
     if [file readable $filename] {
-	checkLogType "$filename"
-	reloadProc
+        checkLogType "$filename"
+        reloadProc
         set filename [escapeSpace $filename]
-	if {"$filename" != "$LoadFile"} {
-	    set PrevLoadFile $LoadFile
+        if {"$filename" != "$LoadFile"} {
+            set PrevLoadFile $LoadFile
         }
-	set LoadFile $filename
-	set Device "file:$filename"
-	addLoadedFiles $filename
-	clearSearchAll
-	clearHighlightAll
-    changeEncoding
-	openSource
+        set LoadFile $filename
+        set Device "file:$filename"
+        addLoadedFiles $filename
+        clearSearchAll
+        clearHighlightAll
+        changeEncoding
+        openSource
     } else {
         puts "not readable"
     }
@@ -651,9 +655,9 @@ proc addLoadedFiles {filename} {
     #lappend LoadedFiles $filename
     set files $filename
     foreach xfile $LoadedFiles {
-	if {![string match $filename $xfile]} {
-	   lappend files $xfile
-	}
+        if {![string match $filename $xfile]} {
+            lappend files $xfile
+        }
     }
     set LoadedFiles $files
     updateLoadedFiles
@@ -691,21 +695,21 @@ proc loadDevice {} {
 }
 
 proc wrapMenu {} {
-  global WrapMode
-  set m .wmode
-  menu $m -tearoff 0
-  $m add radiobutton -label None -value none -variable WrapMode -command changeWrapMode
-  $m add radiobutton -label Char -value char -variable WrapMode -command changeWrapMode
-  $m add radiobutton -label Word -value word -variable WrapMode -command changeWrapMode
-  bind .b.wmode <1> "tk_popup $m %X %Y"
+    global WrapMode
+    set m .wmode
+    menu $m -tearoff 0
+    $m add radiobutton -label None -value none -variable WrapMode -command changeWrapMode
+    $m add radiobutton -label Char -value char -variable WrapMode -command changeWrapMode
+    $m add radiobutton -label Word -value word -variable WrapMode -command changeWrapMode
+    bind .b.wmode <1> "tk_popup $m %X %Y"
 }
 
 proc changeWrapMode {args} {
-  global WrapMode logview
-  .b.wmode config -text "LineWrap: $WrapMode"
-  $logview config -wrap  $WrapMode
-  update idletasks
-puts "changeWrapMode $WrapMode"
+    global WrapMode logview
+    .b.wmode config -text "LineWrap: $WrapMode"
+    $logview config -wrap  $WrapMode
+    update idletasks
+    puts "changeWrapMode $WrapMode"
 }
 wrapMenu
 
@@ -770,7 +774,7 @@ proc garbageHistory {} {
     pack [button $w.bbox.forget_sel -text "Forget selected files." -command "clearHistory $w.list"] -side right
     pack [listbox $w.list -selectmode multiple] -fill both -expand yes
     foreach one $LoadedFiles {
-      $w.list insert end $one
+        $w.list insert end $one
     }
     grab set $w
 }
@@ -785,10 +789,10 @@ proc clearHistory {w} {
     set idx 0
     set n [llength $LoadedFiles]
     foreach one $LoadedFiles {
-	if {[lsearch $selectedIdx $idx] == -1} {
-	   lappend nlist $one
-	}
-	incr idx
+        if {[lsearch $selectedIdx $idx] == -1} {
+            lappend nlist $one
+        }
+        incr idx
     }
     puts "new history: $nlist"
     set LoadedFiles $nlist
@@ -804,10 +808,10 @@ proc updateTags {tag} {
     global taglist
     set idx [lsearch $taglist $tag]
     if { $idx == -1 } {
-	    set taglist "$taglist $tag"
-	    set ltag [string tolower $tag]
-	    addCheckBtn .p.lf $ltag $tag
-	}
+        set taglist "$taglist $tag"
+        set ltag [string tolower $tag]
+        addCheckBtn .p.lf $ltag $tag
+    }
 }
 
 proc showAbout {} {
@@ -833,15 +837,15 @@ proc savePreference {} {
     set dir "$env(HOME)/.logcatch"
     set prefFile "logcatch.rc"
     if {! [file isdirectory $dir]} {
-            file mkdir $dir
-        }
+        file mkdir $dir
+    }
     if {! [file isdirectory $dir]} {
-            return
-        }
+        return
+    }
     set fdW [open $dir/$prefFile w+]
     if {$fdW != ""} {
-            close $fdW
-        }
+        close $fdW
+    }
 }
 
 proc loadPreference {} {
@@ -868,62 +872,62 @@ TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogVi
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
     if {! [file isdirectory $dir]} {
-            file mkdir $dir
-        }
+        file mkdir $dir
+    }
     if {! [file isdirectory $dir]} {
-            return
-        }
+        return
+    }
     set fdW [open $dir/$loadStateFile w+]
     if {$fdW != ""} {
-	    # save loaded files list
-	    puts $fdW ":LoadedFiles"
-	    foreach one $LoadedFiles {
-		puts $fdW $one
-	    }
-	    # save filter strings
-	    puts $fdW ":iFilter"
-	    puts $fdW $iFilter
-	    puts $fdW ":eFilter"
-	    puts $fdW $eFilter
-	    puts $fdW ":sWord"
-	    puts $fdW $sWord
-	    puts $fdW ":WrapMode"
-	    puts $fdW $WrapMode
-	    puts $fdW ":Editor"
-	    puts $fdW $Editor
-	    puts $fdW ":Encoding"
-	    puts $fdW $Encoding
-	    puts $fdW ":SDK_PATH"
-	    puts $fdW $SDK_PATH
-	    puts $fdW ":ADB_PATH"
-	    puts $fdW $ADB_PATH
-	    puts $fdW ":NO_ADB"
-	    puts $fdW $NO_ADB
-            puts $fdW ":MenuFace"
-            puts $fdW $MenuFace
-            puts $fdW ":TagFilter"
-            puts $fdW $TagFilter
-            puts $fdW ":hWord1"
-            puts $fdW $hWord1
-            puts $fdW ":hWord2"
-            puts $fdW $hWord2
-            puts $fdW ":hWord3"
-            puts $fdW $hWord3
-            puts $fdW ":hWord4"
-            puts $fdW $hWord4
-            puts $fdW ":hWord5"
-            puts $fdW $hWord5
-            puts $fdW ":hWord6"
-            puts $fdW $hWord6
-            puts $fdW ":hWord7"
-            puts $fdW $hWord7
-            puts $fdW ":LogViewFontName"
-            puts $fdW $LogViewFontName
-            puts $fdW ":LogViewFontSize"
-            puts $fdW $LogViewFontSize
-            puts $fdW ":FilterDeadProcess"
-            puts $fdW $FilterDeadProcess
-	    puts $fdW ":"
+        # save loaded files list
+        puts $fdW ":LoadedFiles"
+        foreach one $LoadedFiles {
+            puts $fdW $one
+        }
+        # save filter strings
+        puts $fdW ":iFilter"
+        puts $fdW $iFilter
+        puts $fdW ":eFilter"
+        puts $fdW $eFilter
+        puts $fdW ":sWord"
+        puts $fdW $sWord
+        puts $fdW ":WrapMode"
+        puts $fdW $WrapMode
+        puts $fdW ":Editor"
+        puts $fdW $Editor
+        puts $fdW ":Encoding"
+        puts $fdW $Encoding
+        puts $fdW ":SDK_PATH"
+        puts $fdW $SDK_PATH
+        puts $fdW ":ADB_PATH"
+        puts $fdW $ADB_PATH
+        puts $fdW ":NO_ADB"
+        puts $fdW $NO_ADB
+        puts $fdW ":MenuFace"
+        puts $fdW $MenuFace
+        puts $fdW ":TagFilter"
+        puts $fdW $TagFilter
+        puts $fdW ":hWord1"
+        puts $fdW $hWord1
+        puts $fdW ":hWord2"
+        puts $fdW $hWord2
+        puts $fdW ":hWord3"
+        puts $fdW $hWord3
+        puts $fdW ":hWord4"
+        puts $fdW $hWord4
+        puts $fdW ":hWord5"
+        puts $fdW $hWord5
+        puts $fdW ":hWord6"
+        puts $fdW $hWord6
+        puts $fdW ":hWord7"
+        puts $fdW $hWord7
+        puts $fdW ":LogViewFontName"
+        puts $fdW $LogViewFontName
+        puts $fdW ":LogViewFontSize"
+        puts $fdW $LogViewFontSize
+        puts $fdW ":FilterDeadProcess"
+        puts $fdW $FilterDeadProcess
+        puts $fdW ":"
         close $fdW
     }
 }
@@ -944,100 +948,100 @@ proc loadLastState {} {
     if {$fd != ""} {
         set flag 0
         while {[gets $fd line] > -1} {
-	       if {[string match ":*" $line]} {
-                   if {[string match ":LoadedFiles" $line]} {
-		      set flag 1
-                   } elseif {[string match ":iFilter" $line]} {
-		      set flag 2
-                   } elseif {[string match ":eFilter" $line]} {
-		      set flag 3
-                   } elseif {[string match ":sWord" $line]} {
-		      set flag 4
-                   } elseif {[string match ":WrapMode" $line]} {
-		      set flag 5
-                   } elseif {[string match ":Editor" $line]} {
-		      set flag 6
-                   } elseif {[string match ":Encoding" $line]} {
-		      set flag 7
-                   } elseif {[string match ":SDK_PATH" $line]} {
-		      set flag 8
-                   } elseif {[string match ":ADB_PATH" $line]} {
-		      set flag 9
-                   } elseif {[string match ":NO_ADB" $line]} {
-		      set flag 10
-                   } elseif {[string match ":MenuFace" $line]} {
-		      set flag 11
-                   } elseif {[string match ":TagFilter" $line]} {
-		      set flag 12
-                   } elseif {[string match ":hWord1" $line]} {
-		      set flag 13
-                   } elseif {[string match ":hWord2" $line]} {
-		      set flag 14
-                   } elseif {[string match ":hWord3" $line]} {
-		      set flag 15
-                   } elseif {[string match ":hWord4" $line]} {
-		      set flag 16
-                   } elseif {[string match ":hWord5" $line]} {
-		      set flag 17
-                   } elseif {[string match ":hWord6" $line]} {
-		      set flag 18
-                   } elseif {[string match ":hWord7" $line]} {
-		      set flag 19
-                   } elseif {[string match ":LogViewFontName" $line]} {
-		      set flag 20
-                   } elseif {[string match ":LogViewFontSize" $line]} {
-		      set flag 21
-                   } elseif {[string match ":FilterDeadProcess" $line]} {
-		      set flag 22
-                   } else {
-		      set flag 0
-                   }
-	        } elseif {$flag == 1} {
-	           lappend LoadedFiles $line
-                } elseif {$flag == 2} { 
-		   set iFilter $line
-                } elseif {$flag == 3} { 
-		   set eFilter $line
-                } elseif {$flag == 4} { 
-		   set sWord $line
-                } elseif {$flag == 5} { 
-		   set WrapMode $line
-                } elseif {$flag == 6} { 
-		   set Editor $line
-                } elseif {$flag == 7} { 
-		   set Encoding $line
-                } elseif {$flag == 8} { 
-		   set SDK_PATH $line
-                } elseif {$flag == 9} { 
-		   set ADB_PATH $line
-                } elseif {$flag == 10} { 
-		   set NO_ADB $line
-                } elseif {$flag == 11} { 
-		   set MenuFace $line
-                } elseif {$flag == 12} { 
-		   set TagFilter $line
-                } elseif {$flag == 13} { 
-		   set hWord1 $line
-                } elseif {$flag == 14} { 
-		   set hWord2 $line
-                } elseif {$flag == 15} { 
-		   set hWord3 $line
-                } elseif {$flag == 16} { 
-		   set hWord4 $line
-                } elseif {$flag == 17} { 
-		   set hWord5 $line
-                } elseif {$flag == 18} { 
-		   set hWord6 $line
-                } elseif {$flag == 19} { 
-		   set hWord7 $line
-                } elseif {$flag == 20} { 
-		   set LogViewFontName $line
-                } elseif {$flag == 21} { 
-		   set LogViewFontSize $line
-                } elseif {$flag == 22} { 
-           set FilterDeadProcess $line
-		} else {
+           if {[string match ":*" $line]} {
+                if {[string match ":LoadedFiles" $line]} {
+                    set flag 1
+                } elseif {[string match ":iFilter" $line]} {
+                    set flag 2
+                } elseif {[string match ":eFilter" $line]} {
+                    set flag 3
+                } elseif {[string match ":sWord" $line]} {
+                    set flag 4
+                } elseif {[string match ":WrapMode" $line]} {
+                    set flag 5
+                } elseif {[string match ":Editor" $line]} {
+                    set flag 6
+                } elseif {[string match ":Encoding" $line]} {
+                    set flag 7
+                } elseif {[string match ":SDK_PATH" $line]} {
+                    set flag 8
+                } elseif {[string match ":ADB_PATH" $line]} {
+                    set flag 9
+                } elseif {[string match ":NO_ADB" $line]} {
+                    set flag 10
+                } elseif {[string match ":MenuFace" $line]} {
+                    set flag 11
+                } elseif {[string match ":TagFilter" $line]} {
+                    set flag 12
+                } elseif {[string match ":hWord1" $line]} {
+                    set flag 13
+                } elseif {[string match ":hWord2" $line]} {
+                    set flag 14
+                } elseif {[string match ":hWord3" $line]} {
+                    set flag 15
+                } elseif {[string match ":hWord4" $line]} {
+                    set flag 16
+                } elseif {[string match ":hWord5" $line]} {
+                    set flag 17
+                } elseif {[string match ":hWord6" $line]} {
+                    set flag 18
+                } elseif {[string match ":hWord7" $line]} {
+                    set flag 19
+                } elseif {[string match ":LogViewFontName" $line]} {
+                    set flag 20
+                } elseif {[string match ":LogViewFontSize" $line]} {
+                    set flag 21
+                } elseif {[string match ":FilterDeadProcess" $line]} {
+                    set flag 22
+                } else {
+                    set flag 0
                 }
+            } elseif {$flag == 1} {
+                lappend LoadedFiles $line
+            } elseif {$flag == 2} { 
+                set iFilter $line
+            } elseif {$flag == 3} { 
+                set eFilter $line
+            } elseif {$flag == 4} { 
+                set sWord $line
+            } elseif {$flag == 5} { 
+                set WrapMode $line
+            } elseif {$flag == 6} { 
+                set Editor $line
+            } elseif {$flag == 7} { 
+                set Encoding $line
+            } elseif {$flag == 8} { 
+                set SDK_PATH $line
+            } elseif {$flag == 9} { 
+                set ADB_PATH $line
+            } elseif {$flag == 10} { 
+                set NO_ADB $line
+            } elseif {$flag == 11} { 
+                set MenuFace $line
+            } elseif {$flag == 12} { 
+                set TagFilter $line
+            } elseif {$flag == 13} { 
+                set hWord1 $line
+            } elseif {$flag == 14} { 
+                set hWord2 $line
+            } elseif {$flag == 15} { 
+                set hWord3 $line
+            } elseif {$flag == 16} { 
+                set hWord4 $line
+            } elseif {$flag == 17} { 
+                set hWord5 $line
+            } elseif {$flag == 18} { 
+                set hWord6 $line
+            } elseif {$flag == 19} { 
+                set hWord7 $line
+            } elseif {$flag == 20} { 
+                set LogViewFontName $line
+            } elseif {$flag == 21} { 
+                set LogViewFontSize $line
+            } elseif {$flag == 22} { 
+                set FilterDeadProcess $line
+            } else {
+            }
         }
         close $fd
         updateLoadedFiles
@@ -1050,7 +1054,7 @@ proc loadLastState {} {
 
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
-	statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag
+    statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag
     closeFd
     set deny "!"
     set isFileSource [string match "file:*" $Device]
@@ -1059,25 +1063,25 @@ proc openSource {} {
     set xiFilter [checkEscapeAll [escapeSlash "$iFilter"]]
     set xeFilter [checkEscapeAll [escapeSlash "$eFilter"]]
     if {$eFilter == ""} {
-       set deny ""
+        set deny ""
     }
     set lvlAndOr "&&"
     if {$LevelAndOr == "or"} {
-       set lvlAndOr "||"
+        set lvlAndOr "||"
     }
     set title $Device
-puts "processFilter: \"$ProcessFilterExpression\""
-puts "tagFilter: \"$TagFilter\""
-puts "pAndOr: \"$ProcessAndOrTag\""
-puts "processTagFilter: \"$ProcessTagFilter\""
+    puts "processFilter: \"$ProcessFilterExpression\""
+    puts "tagFilter: \"$TagFilter\""
+    puts "pAndOr: \"$ProcessAndOrTag\""
+    puts "processTagFilter: \"$ProcessTagFilter\""
 
     if {$isFileSource} {
-      updateProcessFilterStatus disabled
-      set lvlstate normal
-      if {$LogType == "raw"} {
-         set lvlAndOr "||"
-         set lvlstate disabled
-      }
+        updateProcessFilterStatus disabled
+        set lvlstate normal
+        if {$LogType == "raw"} {
+            set lvlAndOr "||"
+            set lvlstate disabled
+        }
 #      foreach w {v d i w e andor} {
 #       .p.rf.hks.${w} config -state $lvlstate
 #      }
@@ -1086,9 +1090,9 @@ set Fd [open "| awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFi
     } else {
         updateProcessFilterStatus normal
         set splitname [split $Device :]
-	set model  [lindex $splitname 0]
-	set device [lindex $splitname 1]
-	set port [lindex $splitname 2]
+        set model  [lindex $splitname 0]
+        set device [lindex $splitname 1]
+        set port [lindex $splitname 2]
         if {$port != ""} {
             append device ":$port"
         }
@@ -1107,10 +1111,10 @@ set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"NR > 0 && $Proc
     .b.logtype config -text "LogType: $LogType"
     wm title . "$title : $AppName"
     if {$Fd != ""} {
-	set LineCount 0
+        set LineCount 0
         logcat 1 $Fd
     } else {
-puts "$Fd null"
+        puts "$Fd null"
     }
 }
 
@@ -1118,8 +1122,8 @@ proc closeFd {} {
     global Fd
     if {$Fd != ""} {
         fconfigure $Fd -blocking 0
-	close $Fd
-	set Fd ""
+        close $Fd
+        set Fd ""
     }
     updateProcessFilterStatus disabled
 }
@@ -1128,33 +1132,33 @@ proc searchWordAll {w dir wentry} {
     global sWord sCnt sIdx LineCount pIndex
     set word [$wentry get]
     if {$word == ""} {
-       clearSearchAll
-       return
+        clearSearchAll
+        return
     }
     if {$sWord != $word} {
-       clearSearchAll
-       set sCnt 0
-       set len [string length $word]
-       set index 0.0
-       set idx0 [$w search -forward -- $word $index]
-       set index $idx0
-       while {$index != ""} {
-           set s [lindex [split $index "."] 0]
-           set e [lindex [split $index "."] 1]
-	   incr sCnt
-           incr e $len
-           $w tag add colorYel $index $s.$e
-	   set index [$w search -forward -- $word $s.$e]
-	   if {$index == $idx0} { break }
-       }
-       if {$sCnt} {
-	  set sWord $word
-	 # .p.rf.search.cnt config -text $cnt
-       }
-       set toForward [expr {[string compare "$dir" "-forward"] == 0 ? 1 : 0}]
-       set sIdx [expr $toForward ? 0 : $sCnt + 1]
-       set pIndex [expr $toForward ? "1.0" : [$w index "end-1c"]]
-puts "pi $pIndex"
+        clearSearchAll
+        set sCnt 0
+        set len [string length $word]
+        set index 0.0
+        set idx0 [$w search -forward -- $word $index]
+        set index $idx0
+        while {$index != ""} {
+            set s [lindex [split $index "."] 0]
+            set e [lindex [split $index "."] 1]
+            incr sCnt
+            incr e $len
+            $w tag add colorYel $index $s.$e
+            set index [$w search -forward -- $word $s.$e]
+            if {$index == $idx0} { break }
+        }
+        if {$sCnt} {
+            set sWord $word
+            # .p.rf.search.cnt config -text $cnt
+        }
+        set toForward [expr {[string compare "$dir" "-forward"] == 0 ? 1 : 0}]
+        set sIdx [expr $toForward ? 0 : $sCnt + 1]
+        set pIndex [expr $toForward ? "1.0" : [$w index "end-1c"]]
+        puts "pi $pIndex"
     }
     searchWord $w $dir $wentry
 }
@@ -1171,27 +1175,27 @@ proc searchWord {w dir wentry} {
     set index [$w search $dir -- $word $sIndex]
     set s [lindex [split $index "."] 0]
     set e [lindex [split $index "."] 1]
- puts "index: $index pIndex: $pIndex  dir: $dir  len: $len"
+    puts "index: $index pIndex: $pIndex  dir: $dir  len: $len"
     if {$s == "" || $e == ""} {
-	set sIndex 1.0
-	set sIdx 0
+        set sIndex 1.0
+        set sIdx 0
     } else {
-	set peIndex $ps.[expr $pe + $len]
+        set peIndex $ps.[expr $pe + $len]
         $w tag remove colorOra $pIndex $peIndex
-	puts "remove $pIndex $peIndex : $delta"
-	puts "add $index $s.[expr $e + $len]"
-#        $w tag add colorWht $s.0 $s.end
+        puts "remove $pIndex $peIndex : $delta"
+        puts "add $index $s.[expr $e + $len]"
+#       $w tag add colorWht $s.0 $s.end
         $w tag add colorOra $index $s.[expr $e + $len]
-	$w tag raise colorOra
+        $w tag raise colorOra
         $w see $index
-	$w see [expr {$toForward ? $s + 5 : $s - 5}].$e
-	# next search starting index
+        $w see [expr {$toForward ? $s + 5 : $s - 5}].$e
+        # next search starting index
         set sIndex $s.[expr $e + $delta]
-	set pIndex $index
-	set sDir $dir
+        set pIndex $index
+        set sDir $dir
         set sIdx [expr ($sIdx + ($toForward ? 1 : -1)) % $sCnt]
-	if {$sIdx == 0} {
-           set sIdx $sCnt
+        if {$sIdx == 0} {
+            set sIdx $sCnt
         }
     }
 }
@@ -1199,138 +1203,138 @@ proc searchWord {w dir wentry} {
 proc searchAuto {w wentry {reverse ""}} {
     global sDir sWord
     if {$reverse == "-r"} {
-       if {$sDir == "-forward"} {
-         set sDir "-backward"
-       } elseif {$sDir == "-backward"} {
-         set sDir "-forward"
-       }
+        if {$sDir == "-forward"} {
+            set sDir "-backward"
+        } elseif {$sDir == "-backward"} {
+            set sDir "-forward"
+        }
     }
     searchWordAll $w $sDir $wentry
 }
 
 proc highlightWord {colorTag {word ""}} {
-  global HighlightWord logview
-  set wentry [lindex $HighlightWord($colorTag) 0]
-  set word [$wentry get]
+    global HighlightWord logview
+    set wentry [lindex $HighlightWord($colorTag) 0]
+    set word [$wentry get]
 
-  if {$word == ""} {
-      removeHighlight $colorTag
-      return
-  }
+    if {$word == ""} {
+        removeHighlight $colorTag
+        return
+    }
 
-  set sCnt [lindex $HighlightWord($colorTag) 2]
-  set err [catch {$logview index ${colorTag}.last} index]
-  if {$err} {
-      set index 1.0
-  } else {
-      set indexes [$logview tag prevrange $colorTag $index]
-      set curWord [$logview get [lindex $indexes 0] $index]
-      if {$curWord != "" && $word != "" && $curWord != $word} {
-	  removeHighlight $colorTag
-	  set index 1.0
-	  set sCnt 0
-      } else {
-      }
-  }
-# puts "highlightWord: $word from: $index cnt: $sCnt"
+    set sCnt [lindex $HighlightWord($colorTag) 2]
+    set err [catch {$logview index ${colorTag}.last} index]
+    if {$err} {
+        set index 1.0
+    } else {
+        set indexes [$logview tag prevrange $colorTag $index]
+        set curWord [$logview get [lindex $indexes 0] $index]
+        if {$curWord != "" && $word != "" && $curWord != $word} {
+            removeHighlight $colorTag
+            set index 1.0
+            set sCnt 0
+        } else {
+        }
+    }
+    # puts "highlightWord: $word from: $index cnt: $sCnt"
 
-  while 1 {
-# puts "\"$word $index\""
-      set index [$logview search -count wordLen -- "$word" $index end]
-      if {$index == ""} {
-          break
-      }
-      incr sCnt
-      $logview tag add $colorTag $index "$index + $wordLen chars"
-      set index [$logview index "$index + $wordLen chars"]
-  }
-  if {$sCnt == 0} {
-      ${wentry}cnt config -text ""
-  } else {
-      ${wentry}cnt config -text $sCnt
-  }
-# set HighlightWord($colorTag) "$wentry 0 $sCnt 0.0 {}"
-  set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 2 2 $sCnt]
+    while 1 {
+        # puts "\"$word $index\""
+        set index [$logview search -count wordLen -- "$word" $index end]
+        if {$index == ""} {
+            break
+        }
+        incr sCnt
+        $logview tag add $colorTag $index "$index + $wordLen chars"
+        set index [$logview index "$index + $wordLen chars"]
+    }
+    if {$sCnt == 0} {
+        ${wentry}cnt config -text ""
+    } else {
+        ${wentry}cnt config -text $sCnt
+    }
+    # set HighlightWord($colorTag) "$wentry 0 $sCnt 0.0 {}"
+    set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 2 2 $sCnt]
 }
 
 proc incrementalHighlight {} {
     global HighlightWord
     foreach colorTag [array names HighlightWord] {
-	after idle autoHighlight $colorTag
+        after idle autoHighlight $colorTag
     }
     # search word all
 #   after idle highlightWord .p.rf.search.e colorYel
 }
 
 proc autoHighlight {colorTag} {
-  global HighlightWord AUTO_HIGHLIGHT_DELAY
-  set xid [lindex $HighlightWord($colorTag) 4]
-  if {$xid != ""} {
-# puts "auto cancel $xid"
-      after cancel $xid
-  }
-  set xid [after $AUTO_HIGHLIGHT_DELAY after idle highlightWord $colorTag]
-  set wentry [lindex $HighlightWord($colorTag) 0]
-  set idx [lindex $HighlightWord($colorTag) 1]
-  set cnt [lindex $HighlightWord($colorTag) 2]
-  set seekId [lindex $HighlightWord($colorTag) 3]
-  set HighlightWord($colorTag) "$wentry $idx $cnt $seekId $xid"
+    global HighlightWord AUTO_HIGHLIGHT_DELAY
+    set xid [lindex $HighlightWord($colorTag) 4]
+    if {$xid != ""} {
+      # puts "auto cancel $xid"
+        after cancel $xid
+    }
+    set xid [after $AUTO_HIGHLIGHT_DELAY after idle highlightWord $colorTag]
+    set wentry [lindex $HighlightWord($colorTag) 0]
+    set idx [lindex $HighlightWord($colorTag) 1]
+    set cnt [lindex $HighlightWord($colorTag) 2]
+    set seekId [lindex $HighlightWord($colorTag) 3]
+    set HighlightWord($colorTag) "$wentry $idx $cnt $seekId $xid"
 }
 
 proc seekHighlight {colorTag key} {
-  global logview HighlightWord
-  if {$key == "Up" || $key == "Down" || $key == "dummy-clean"} {
-      set bgcolor [$logview tag cget $colorTag -background]
-      set fgcolor [$logview tag cget $colorTag -foreground]
-      set bgDark [::tk::Darken $bgcolor 120]
-      set fgLight [::tk::Darken $fgcolor 100]
-      $logview tag config ${colorTag}Seek -background $bgDark -foreground $fgLight \
-	  -spacing1 5 -spacing3 5 -relief raised -borderwidth 2 -lmargin1 3 -lmargin2 3 -rmargin 3 -offset 3
+    global logview HighlightWord
+    if {$key == "Up" || $key == "Down" || $key == "dummy-clean"} {
+        set bgcolor [$logview tag cget $colorTag -background]
+        set fgcolor [$logview tag cget $colorTag -foreground]
+        set bgDark [::tk::Darken $bgcolor 120]
+        set fgLight [::tk::Darken $fgcolor 100]
+        $logview tag config ${colorTag}Seek -background $bgDark -foreground $fgLight \
+        -spacing1 5 -spacing3 5 -relief raised -borderwidth 2 -lmargin1 3 -lmargin2 3 -rmargin 3 -offset 3
 
-      set err [catch {$logview index ${colorTag}.last} index]
-      if {$err} {
-          return
-      }
-      $logview config -state normal
-      set idx [lindex $HighlightWord($colorTag) 1]
-      set sCnt [lindex $HighlightWord($colorTag) 2]
-      set err [catch {$logview index ${colorTag}Seek.first} seekFirst]
-      set err [catch {$logview index ${colorTag}Seek.last} seekLast]
-      if {!$err} {
-          $logview delete $seekFirst $seekLast
-          $logview tag remove ${colorTag}Seek 1.0 end
-      }
-      set indexes ""
-      if {$key == "Up"} {
-          if {$err} {
-              set seekFirst [$logview index ${colorTag}.last]
-              set idx [expr $sCnt + 1]
-          }
-          set indexes [$logview tag prevrange $colorTag $seekFirst]
-          if {$indexes != ""} {
-	      incr idx -1
-          }
-      } elseif {$key == "Down"} {
-          if {$err} {
-              set seekLast [$logview index ${colorTag}.first]
-              set idx 0
-          }
-          set indexes [$logview tag nextrange $colorTag $seekLast]
-          if {$indexes != ""} {
-              incr idx
-          }
-      }
-      if {$indexes != ""} {
-	  set seekFirst [lindex $indexes 0]
-          set seekText "$idx > "
-	  $logview insert $seekFirst $seekText
-	  set seekLast [$logview index "$seekFirst + [string length $seekText] chars"]
-          $logview tag add ${colorTag}Seek $seekFirst $seekLast
-	  set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 1 1 $idx]
-          spotLight $seekFirst $seekLast $key
-      }
-      $logview config -state disabled
-  }
+        set err [catch {$logview index ${colorTag}.last} index]
+        if {$err} {
+            return
+        }
+        $logview config -state normal
+        set idx [lindex $HighlightWord($colorTag) 1]
+        set sCnt [lindex $HighlightWord($colorTag) 2]
+        set err [catch {$logview index ${colorTag}Seek.first} seekFirst]
+        set err [catch {$logview index ${colorTag}Seek.last} seekLast]
+        if {!$err} {
+            $logview delete $seekFirst $seekLast
+            $logview tag remove ${colorTag}Seek 1.0 end
+        }
+        set indexes ""
+        if {$key == "Up"} {
+            if {$err} {
+                set seekFirst [$logview index ${colorTag}.last]
+                set idx [expr $sCnt + 1]
+            }
+            set indexes [$logview tag prevrange $colorTag $seekFirst]
+            if {$indexes != ""} {
+                incr idx -1
+            }
+        } elseif {$key == "Down"} {
+            if {$err} {
+                set seekLast [$logview index ${colorTag}.first]
+                set idx 0
+            }
+            set indexes [$logview tag nextrange $colorTag $seekLast]
+            if {$indexes != ""} {
+                incr idx
+            }
+        }
+        if {$indexes != ""} {
+            set seekFirst [lindex $indexes 0]
+            set seekText "$idx > "
+            $logview insert $seekFirst $seekText
+            set seekLast [$logview index "$seekFirst + [string length $seekText] chars"]
+            $logview tag add ${colorTag}Seek $seekFirst $seekLast
+            set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 1 1 $idx]
+            spotLight $seekFirst $seekLast $key
+        }
+        $logview config -state disabled
+    }
 }
 
 proc spotLight {seekFirst seekLast key} {
@@ -1394,7 +1398,7 @@ proc clearSearchAll {} {
 proc clearHighlightAll {} {
     global HighlightWord
     foreach colorTag [array names HighlightWord] {
-	removeHighlight $colorTag
+        removeHighlight $colorTag
     }
 }
 
@@ -1403,28 +1407,28 @@ proc removeHighlight {colorTag} {
     $LogView tag remove $colorTag 1.0 end
     set err [catch {$LogView index ${colorTag}Seek.first} seekFirst]
     if {!$err} {
-       set err [catch {$LogView index ${colorTag}Seek.last} seekLast]
-puts "del $seekFirst $seekLast"
-       $LogView config -state normal
-       $LogView delete $seekFirst $seekLast
-       $LogView config -state disabled
+        set err [catch {$LogView index ${colorTag}Seek.last} seekLast]
+        puts "del $seekFirst $seekLast"
+        $LogView config -state normal
+        $LogView delete $seekFirst $seekLast
+        $LogView config -state disabled
     } else {
-# puts "del err"
+        # puts "del err"
     }
     $LogView tag remove ${colorTag}Seek 1.0 end
     if {[info exists HighlightWord($colorTag)]} {
         set wentry [lindex $HighlightWord($colorTag) 0]
- 	${wentry}cnt config -text ""
+        ${wentry}cnt config -text ""
         set HighlightWord($colorTag) "$wentry 0 0 0.0 {}"
     }
 }
 
 proc chooseFontsAndColors {} {
-  set w [toplevel .font_color]
-  pack [button $w.close -text Close -command "destroy $w"] -side bottom
-  pack [label $w.whoami -text "Choose fonts and colors."]
-  pack [label $w.color -text "Colors"]
-  pack [button $w.colorpick -text ColorPicker -command "getColorAndSet $w"] -side right
+    set w [toplevel .font_color]
+    pack [button $w.close -text Close -command "destroy $w"] -side bottom
+    pack [label $w.whoami -text "Choose fonts and colors."]
+    pack [label $w.color -text "Colors"]
+    pack [button $w.colorpick -text ColorPicker -command "getColorAndSet $w"] -side right
 }
 
 proc getColorAndSet {w} {
@@ -1438,7 +1442,7 @@ proc clearLogView {} {
     global logview LineCount statusOne StartLabel LastLogLevel
     $logview config -state normal
     $logview delete 1.0 end
-  #  $logview insert 1.0 $StartLabel colorBlk
+    # $logview insert 1.0 $StartLabel colorBlk
     $logview config -state disabled
     set LastLogLevel "V"
     set LineCount 0
@@ -1448,20 +1452,20 @@ proc clearLogView {} {
 }
 
 proc changeLevel {lvl} {
-  global LogLevel LevelFilter
-  set lvlFilter ""
-  foreach lvl {V D I W E} {
-     set on $LogLevel($lvl)
-     if {$on} {
-        if {$lvlFilter != ""} {
-          append lvlFilter "|"
+    global LogLevel LevelFilter
+    set lvlFilter ""
+    foreach lvl {V D I W E} {
+       set on $LogLevel($lvl)
+       if {$on} {
+            if {$lvlFilter != ""} {
+                append lvlFilter "|"
+            }
+            append lvlFilter "$lvl/"
         }
-        append lvlFilter "$lvl/"
-     }
-  }
-  set LevelFilter [escapeSlash $lvlFilter]
-  puts "LevelFilter: $LevelFilter"
-  openSource
+    }
+    set LevelFilter [escapeSlash $lvlFilter]
+    puts "LevelFilter: $LevelFilter"
+    openSource
 }
 
 proc checkEscapeAll {s} {
@@ -1477,11 +1481,11 @@ proc escapeSlash {s} {
     set x ""
     set len [string length $s]
     for {set i 0} {$i < $len} {incr i} {
-      set c [string index $s $i]
-      if {$c == "/"} {
-        append x "\\\\" 
-      }
-      append x $c 
+        set c [string index $s $i]
+        if {$c == "/"} {
+            append x "\\\\" 
+        }
+        append x $c 
     }
     return $x
 }
@@ -1490,11 +1494,11 @@ proc escapeSpace {s} {
     set x ""
     set len [string length $s]
     for {set i 0} {$i < $len} {incr i} {
-      set c [string index $s $i]
-      if {"$c" == " "} {
-         append x "\\"
-      }
-      append x $c 
+        set c [string index $s $i]
+        if {"$c" == " "} {
+            append x "\\"
+        }
+        append x $c 
     }
     return $x
 }
@@ -1512,7 +1516,7 @@ proc saveLines {{which "all"}} {
         set ec [lindex $rangenums 3]
         puts "sel: $sl.$sc $el.$ec"
         set sdx "$sl.0"
-	set edx "$el.end"
+        set edx "$el.end"
     }
     set dir ~
     set lastLoadedFile [lindex $LoadedFiles 0]
@@ -1523,15 +1527,15 @@ proc saveLines {{which "all"}} {
     set default_exete ".txt"
     set filename [tk_getSaveFile -parent . -initialdir $dir -filetypes $ftypes -defaultextension $default_exete]
     if {$filename == ""} {
-       return
+        return
     }
     cleanSeekHighlight
     set wp [open $filename w]
     if {$wp != ""} {
-      set texts [$logview get $sdx $edx]
-      puts $wp $texts
-      close $wp
-      addLoadedFiles $filename
+        set texts [$logview get $sdx $edx]
+        puts $wp $texts
+        close $wp
+        addLoadedFiles $filename
     }
 }
 
@@ -1590,15 +1594,15 @@ proc getSerial {device {lower 0}} {
 }
 
 proc detectDevices {} {
-  global Device Devices OS
-  getDevices
-  set idx [expr {$OS =="Darwin" ? "2" : "3"}]
-  .mbar.i.d delete $idx end
-  foreach device $Devices {
-    .mbar.i.d add radiobutton -label $device -variable Device -value $device -command loadDevice
-  }
-  updateSourceList
-  return [lindex $Devices 0]
+    global Device Devices OS
+    getDevices
+    set idx [expr {$OS =="Darwin" ? "2" : "3"}]
+    .mbar.i.d delete $idx end
+    foreach device $Devices {
+        .mbar.i.d add radiobutton -label $device -variable Device -value $device -command loadDevice
+    }
+    updateSourceList
+    return [lindex $Devices 0]
 }
 
 proc getProcessPackageList {} {
@@ -1695,16 +1699,16 @@ proc showProcessList {w} {
     }
     set x 0
     foreach alist "$ProcessFilters" {
-	menu $m.desel$x -tearoff 0
-	$m.desel$x add command -label deselect -command "processFilter $w del \"$alist\" ALIVE"
-	$m add cascade -menu $m.desel$x -label "$alist"
-	incr x
+        menu $m.desel$x -tearoff 0
+        $m.desel$x add command -label deselect -command "processFilter $w del \"$alist\" ALIVE"
+        $m add cascade -menu $m.desel$x -label "$alist"
+        incr x
     }
     foreach alist "$ProcessFiltersOld" {
-	menu $m.desel$x -tearoff 0
-	$m.desel$x add command -label deselect -command "processFilter $w del \"$alist\" DEAD"
-	$m add cascade -menu $m.desel$x -label "$alist"
-	incr x
+        menu $m.desel$x -tearoff 0
+        $m.desel$x add command -label deselect -command "processFilter $w del \"$alist\" DEAD"
+        $m add cascade -menu $m.desel$x -label "$alist"
+        incr x
     }
     $m add separator
     menu $m.menu_dead_process -tearoff 0
@@ -1720,58 +1724,58 @@ proc showProcessList {w} {
 }
 
 proc processFilter {w action {alist ""} {which ""}} {
-  global ProcessFilters ProcessFiltersOld
-  puts "processFilter $action $alist $which"
-  if {"$action" == "clear"} {
-    set ProcessFilters ""
-    set ProcessFiltersOld ""
-  } else {
-    if {"$which" == "ALIVE"} {
-        set idx [lsearch -index 1 $ProcessFilters [lindex $alist 1]]
-        if {$idx >= 0} {
-            set ProcessFilters [lreplace $ProcessFilters $idx $idx ]
+    global ProcessFilters ProcessFiltersOld
+    puts "processFilter $action $alist $which"
+    if {"$action" == "clear"} {
+        set ProcessFilters ""
+        set ProcessFiltersOld ""
+    } else {
+        if {"$which" == "ALIVE"} {
+            set idx [lsearch -index 1 $ProcessFilters [lindex $alist 1]]
+            if {$idx >= 0} {
+                set ProcessFilters [lreplace $ProcessFilters $idx $idx ]
+            }
+        } elseif {"$which" == "DEAD"} {
+            set idx [lsearch -index 1 $ProcessFiltersOld [lindex $alist 1]]
+            if {$idx >= 0} {
+                set ProcessFiltersOld [lreplace $ProcessFiltersOld $idx $idx ]
+            }
         }
-    } elseif {"$which" == "DEAD"} {
-        set idx [lsearch -index 1 $ProcessFiltersOld [lindex $alist 1]]
-        if {$idx >= 0} {
-            set ProcessFiltersOld [lreplace $ProcessFiltersOld $idx $idx ]
+        if {"$action" == "add"} {
+            lappend ProcessFilters "$alist"
         }
     }
-    if {"$action" == "add"} {
-       lappend ProcessFilters "$alist"
-    }
-  }
-  updateProcessFilterExpression
+    updateProcessFilterExpression
 }
 
 proc updateProcessFilterExpression {} {
-  global ProcessFilters ProcessFilterExpression ProcessFiltersOld
-  set plist ""
-  foreach onep "$ProcessFilters $ProcessFiltersOld" {
-    append plist "|[lindex $onep 0]"
-  }
-  set ProcessFilterExpression [string range $plist 1 end]
-  updateProcessFilterStatus normal
+    global ProcessFilters ProcessFilterExpression ProcessFiltersOld
+    set plist ""
+    foreach onep "$ProcessFilters $ProcessFiltersOld" {
+        append plist "|[lindex $onep 0]"
+    }
+    set ProcessFilterExpression [string range $plist 1 end]
+    updateProcessFilterStatus normal
 }
 
 proc updateProcessFilterStatus {status} {
-  global ProcessFilterExpression wProcessFilter wProcessAndOr
-  set w $wProcessFilter
-# puts "updateProcessFilterStatus plist: $ProcessFilterExpression status: $status"
-  $w config -state $status
-  $wProcessAndOr config -state $status
+    global ProcessFilterExpression wProcessFilter wProcessAndOr
+    set w $wProcessFilter
+    # puts "updateProcessFilterStatus plist: $ProcessFilterExpression status: $status"
+    $w config -state $status
+    $wProcessAndOr config -state $status
 
-  set lcnt [llength $ProcessFilterExpression]
-  if {$status == "normal"} {
-    if {$lcnt > 0} {
-      set status "$ProcessFilterExpression"
-    } elseif {$lcnt == 0} {
-      set status "select..."
+    set lcnt [llength $ProcessFilterExpression]
+    if {$status == "normal"} {
+        if {$lcnt > 0} {
+            set status "$ProcessFilterExpression"
+        } elseif {$lcnt == 0} {
+            set status "select..."
+        }
+    } else {
+        set status "$ProcessFilterExpression : $status"
     }
-  } else {
-      set status "$ProcessFilterExpression : $status"
-  }
-  $w config -text $status
+    $w config -text $status
 }
 
 proc changeProcessTagComplex {w} {
@@ -1781,7 +1785,7 @@ proc changeProcessTagComplex {w} {
         $w config -text " AND "
     } elseif {$ProcessAndOrTag == "and"} {
         set ProcessAndOrTag "or"
-	$w config -text " OR "
+        $w config -text " OR "
     }
 }
 
@@ -1815,12 +1819,12 @@ proc showHistoryList {w} {
     global Device LoadedFiles
     set m .loadhistory
     if {[winfo exist $m]} {
-      destroy $m
+        destroy $m
     }
     menu $m -tearoff 0
     foreach afile [lrange $LoadedFiles 0 19] {
-	set afile [escapeSpace $afile]
-	$m add command -label "$afile" -command "loadFile $afile"
+        set afile [escapeSpace $afile]
+        $m add command -label "$afile" -command "loadFile $afile"
     }
     set x [expr [winfo rootx $w] + [winfo width $w]]
     set y [winfo rooty $w]
@@ -1839,67 +1843,67 @@ proc getSerial7 {serialraw} {
 }
 
 proc updateSourceList {} {
-  global Devices Device LoadFile PrevLoadFile LoadedFiles
-  foreach one [winfo children .top.sources] {
-      # puts "destroy\ $one\ [winfo class $one]"
-#    if {[winfo class $one] == "Radiobutton"} {
-      destroy $one
-#    }
-  }
-  pack [button .top.sources.devices -text "Devices.." -command detectDevices] -side left
-  set dlen [llength $Devices]
-  foreach device [lrange $Devices 0 2] {
-    set seriallow [getSerial $device 1]
-    set serialraw [getSerial $device]
-    set splitname [split $device :]
-    set model  [lindex $splitname 0]
-    set port  [lindex $splitname 2]
-puts "serial raw: $serialraw low: $seriallow device: $device"
-    if {$port != ""} {
-        set name "$model:$serialraw"
-        set seriallow [regsub -all {\.} $serialraw {_}]
-    } else {
-        set name "$model:[getSerial7 $serialraw]"
+    global Devices Device LoadFile PrevLoadFile LoadedFiles
+    foreach one [winfo children .top.sources] {
+        # puts "destroy\ $one\ [winfo class $one]"
+    #    if {[winfo class $one] == "Radiobutton"} {
+        destroy $one
+    #    }
     }
-    pack [radiobutton .top.sources.$seriallow -variable Device -value $device -command loadDevice -text $name] -side left
-  }
-  if {$dlen > 3} {
-    pack [button .top.sources.otherdevices -text "Other.." \
-	-command "listOtherDevices .top.sources.otherdevices"] -side left
-  }
-  pack [button .top.sources.files -text "Files.." -command loadFile] -side left
-  foreach w "loadfile1 loadfile2 loadfile3" afile "[lrange $LoadedFiles 0 2]" {
-    if {[file exists $afile]} {
-       set afile [escapeSpace $afile]
-       set f [file tail $afile]
-       pack [radiobutton .top.sources.$w -variable Device -value "file:$afile" -text $f \
-	   -command "loadFile $afile"] -side left
+    pack [button .top.sources.devices -text "Devices.." -command detectDevices] -side left
+    set dlen [llength $Devices]
+    foreach device [lrange $Devices 0 2] {
+        set seriallow [getSerial $device 1]
+        set serialraw [getSerial $device]
+        set splitname [split $device :]
+        set model  [lindex $splitname 0]
+        set port  [lindex $splitname 2]
+        puts "serial raw: $serialraw low: $seriallow device: $device"
+        if {$port != ""} {
+            set name "$model:$serialraw"
+            set seriallow [regsub -all {\.} $serialraw {_}]
+        } else {
+            set name "$model:[getSerial7 $serialraw]"
+        }
+        pack [radiobutton .top.sources.$seriallow -variable Device -value $device -command loadDevice -text $name] -side left
     }
-  }
-  pack [button .top.sources.filehistory -text History -command "after 0 showHistoryList .top.sources.filehistory"] -side left
-#  showHistoryList
-#  bind .top.sources.filehistory <1> {tk_popup .loadhistory %X %Y}
+    if {$dlen > 3} {
+        pack [button .top.sources.otherdevices -text "Other.." \
+        -command "listOtherDevices .top.sources.otherdevices"] -side left
+    }
+    pack [button .top.sources.files -text "Files.." -command loadFile] -side left
+    foreach w "loadfile1 loadfile2 loadfile3" afile "[lrange $LoadedFiles 0 2]" {
+        if {[file exists $afile]} {
+            set afile [escapeSpace $afile]
+            set f [file tail $afile]
+            pack [radiobutton .top.sources.$w -variable Device -value "file:$afile" -text $f \
+            -command "loadFile $afile"] -side left
+        }
+    }
+    pack [button .top.sources.filehistory -text History -command "after 0 showHistoryList .top.sources.filehistory"] -side left
+    #  showHistoryList
+    #  bind .top.sources.filehistory <1> {tk_popup .loadhistory %X %Y}
 }
 
 proc listOtherDevices {w} {
     global Devices LoadedFiles
     set m .connectedDevices
     if {[winfo exist $m]} {
-      destroy $m
+        destroy $m
     }
     menu $m -tearoff 0
     foreach device [lrange $Devices 3 end] {
-      set serialraw [getSerial $device]
-      set splitname [split $device :]
-      set model [lindex $splitname 0]
-      set port [lindex $splitname 2]
-      puts "se: $serialraw  device: $device"
-      if {$port != ""} {
-          set name "$model:$serial"
-      } else {
-          set name "$model:[string range $serialraw 0 3]"
-      }
-      $m add radiobutton -label $name -value $device -variable Device -command loadDevice
+        set serialraw [getSerial $device]
+        set splitname [split $device :]
+        set model [lindex $splitname 0]
+        set port [lindex $splitname 2]
+        puts "se: $serialraw  device: $device"
+        if {$port != ""} {
+            set name "$model:$serial"
+        } else {
+            set name "$model:[string range $serialraw 0 3]"
+        }
+        $m add radiobutton -label $name -value $device -variable Device -command loadDevice
     }
     set x [expr [winfo rootx $w] + [winfo width $w]]
     set y [winfo rooty $w]
@@ -1935,7 +1939,7 @@ proc selectLines {{opt all}} {
 }
 
 proc onlyFocusEntry {} {
-  wVector . {$clazz != "Text" && $clazz != "Entry" && $w != "."} "config -takefocus 0"
+    wVector . {$clazz != "Text" && $clazz != "Entry" && $w != "."} "config -takefocus 0"
 }
 
 proc setupEntryKeyPressFilter {} {
@@ -1946,14 +1950,14 @@ proc setupEntryKeyPressFilter {} {
 proc wVector {w {cond "1"} {cmd ""}} {
     set clazz [winfo class $w]
     if {[expr $cond]} {
-    if {$cmd == ""} {
-       puts "$clazz $w"
-    } else {
-       eval $w $cmd
-    }
+        if {$cmd == ""} {
+            puts "$clazz $w"
+        } else {
+            eval $w $cmd
+        }
     }
     foreach w_child [winfo children $w] {
-	wVector $w_child $cond $cmd
+        wVector $w_child $cond $cmd
     }
 }
 
@@ -1961,13 +1965,13 @@ proc wBinder {w {cond "1"} {key} {cmd ""}} {
     set clazz [winfo class $w]
     if {[expr $cond]} {
         if {$cmd == ""} {
-           puts "$clazz $w"
+            puts "$clazz $w"
         } else {
-           bind $w <$key> "$cmd"
+            bind $w <$key> "$cmd"
         }
     }
     foreach w_child [winfo children $w] {
-	wBinder $w_child $cond $key $cmd
+        wBinder $w_child $cond $key $cmd
     }
 }
 
@@ -1987,15 +1991,15 @@ proc checkAdbPath {{w ""} {w2 ""} args} {
         set bgSdk green
         # puts [exec /usr/bin/find $SDK_PATH -maxdepth 2 -type f -name "adb*"]
         if {[file executable $SDK_PATH/tools/adb]} {
-          set ADB_PATH $SDK_PATH/tools/adb
+            set ADB_PATH $SDK_PATH/tools/adb
         } elseif {[file executable $SDK_PATH/tools/adb.exe]} {
-          set ADB_PATH $SDK_PATH/tools/adb.exe
+            set ADB_PATH $SDK_PATH/tools/adb.exe
         } elseif {[file executable $SDK_PATH/platform-tools/adb]} {
-          set ADB_PATH $SDK_PATH/platform-tools/adb
+            set ADB_PATH $SDK_PATH/platform-tools/adb
         } elseif {[file executable $SDK_PATH/platform-tools/adb.exe]} {
-          set ADB_PATH $SDK_PATH/platform-tools/adb.exe
+            set ADB_PATH $SDK_PATH/platform-tools/adb.exe
         }
-     } elseif {[file executable $SDK_PATH/adb]} {
+    } elseif {[file executable $SDK_PATH/adb]} {
         set ADB_PATH "$SDK_PATH/adb"
     } else {
         set ADB_PATH ""
@@ -2004,16 +2008,16 @@ proc checkAdbPath {{w ""} {w2 ""} args} {
         set status "confirmed"
         set statusConst 1;# CONFIRMED
         set bgAdb green
-	set laterEnabled disabled
-	updateSourceList
+        set laterEnabled disabled
+        updateSourceList
     }
     if [winfo exist $w] {
-       $w.statusadb.val config -text "$status: \"$ADB_PATH\"" -bg $bgAdb
-       $w.statussdk.val config -text "$statusSdk: \"$SDK_PATH\"" -bg $bgSdk
-       $w.later config -state $laterEnabled
+        $w.statusadb.val config -text "$status: \"$ADB_PATH\"" -bg $bgAdb
+        $w.statussdk.val config -text "$statusSdk: \"$SDK_PATH\"" -bg $bgSdk
+        $w.later config -state $laterEnabled
     }
     if [winfo exist $w2] {
-       $w2 config -text "$status: \"$ADB_PATH\"" -bg $bgAdb
+        $w2 config -text "$status: \"$ADB_PATH\"" -bg $bgAdb
     }
     return $statusConst
 }
@@ -2037,8 +2041,8 @@ proc getAdbPath {{parentWin ""} {w2 "none"}} {
     pack [label  $w.msg -text "Please locate \"adb including directory\" or \"Android SDK directory\"."]
     pack [set wi [frame  $w.inputarea -relief ridge]] -fill x -expand yes
     pack [button  $wi.browse -text browse \
-		  -command {set SDK_PATH [tk_chooseDirectory -initialdir ~ \
-			    -title "Choose \"adb including directory\" or \"Android SDK directory\""]}] -side right
+        -command {set SDK_PATH [tk_chooseDirectory -initialdir ~ \
+        -title "Choose \"adb including directory\" or \"Android SDK directory\""]}] -side right
     pack [entry  $wi.path -textvariable SDK_PATH] -expand yes -fill x
     pack [set ws1 [frame  $w.statusadb -relief ridge]] -fill x -expand yes
     pack [label $ws1.msg -text "status of adb path:"] -side left
@@ -2054,12 +2058,12 @@ proc getAdbPath {{parentWin ""} {w2 "none"}} {
 }
 
 proc setTraceAdbPath {w w2 on} {
-  global SDK_PATH
-  if {$on} {
-      trace variable SDK_PATH w "after 1000 checkAdbPath $w $w2"
-  } else {
-      trace vdelete  SDK_PATH w "after 1000 checkAdbPath $w $w2"
-  }
+    global SDK_PATH
+    if {$on} {
+        trace variable SDK_PATH w "after 1000 checkAdbPath $w $w2"
+    } else {
+        trace vdelete  SDK_PATH w "after 1000 checkAdbPath $w $w2"
+    }
 }
 
 ## init procedures
@@ -2073,8 +2077,8 @@ setupEntryKeyPressFilter
 #detectDevices
 if {!$NO_ADB} {
     if {[checkAdbPath]} {
-       puts "ADB_PATH already confirmed."
-       return
+        puts "ADB_PATH already confirmed."
+        return
     }
     updateSourceList
     after 2000 getAdbPath
