@@ -24,6 +24,7 @@ set Fd ""
 set PrevLoadFile ""
 set LoadFile ""
 set LoadedFiles ""
+set LoadFileMode 0; # 0: Load file one shot, 1: load file incrementaly
 set LineCount 0
 set statusOne .b.1
 set statusTwo .b.2
@@ -897,6 +898,7 @@ proc loadPreference {} {
 proc saveLastState {} {
     global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace \
 TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogViewFontSize FilterDeadProcess
+    global LoadFileMode
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
     if {! [file isdirectory $dir]} {
@@ -955,6 +957,8 @@ TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogVi
         puts $fdW $LogViewFontSize
         puts $fdW ":FilterDeadProcess"
         puts $fdW $FilterDeadProcess
+        puts $fdW ":LoadFileMode"
+        puts $fdW $LoadFileMode
         puts $fdW ":"
         close $fdW
     }
@@ -963,6 +967,7 @@ TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogVi
 proc loadLastState {} {
     global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace TagFilter
     global hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogViewFontSize FilterDeadProcess
+    global LoadFileMode
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
     if {! [file isdirectory $dir]} {
@@ -1021,6 +1026,8 @@ proc loadLastState {} {
                     set flag 21
                 } elseif {[string match ":FilterDeadProcess" $line]} {
                     set flag 22
+                } elseif {[string match ":LoadFileMode" $line]} {
+                    set flag 23
                 } else {
                     set flag 0
                 }
@@ -1068,6 +1075,8 @@ proc loadLastState {} {
                 set LogViewFontSize $line
             } elseif {$flag == 22} { 
                 set FilterDeadProcess $line
+            } elseif {$flag == 23} {
+                set LoadFileMode $line
             } else {
             }
         }
@@ -1082,7 +1091,8 @@ proc loadLastState {} {
 
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
-    statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag
+    statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag \
+    LoadFileMode
     closeFd
     set deny "!"
     set isFileSource [string match "file:*" $Device]
@@ -1113,8 +1123,12 @@ proc openSource {} {
 #      foreach w {v d i w e andor} {
 #       .p.rf.hks.${w} config -state $lvlstate
 #      }
-set Fd [open "| awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" $LoadFile" r]
-      set title [file tail $Device]
+        if {$LoadFileMode} {
+            set Fd [open "| tail -f -n +1 $LoadFile | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+        } else {
+            set Fd [open "| awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" $LoadFile" r]
+        }
+        set title [file tail $Device]
     } else {
         updateProcessFilterStatus normal
         set splitname [split $Device :]
@@ -1871,7 +1885,7 @@ proc getSerial7 {serialraw} {
 }
 
 proc updateSourceList {} {
-    global Devices Device LoadFile PrevLoadFile LoadedFiles
+    global Devices Device LoadFile PrevLoadFile LoadedFiles LoadFileMode
     foreach one [winfo children .top.sources] {
         # puts "destroy\ $one\ [winfo class $one]"
     #    if {[winfo class $one] == "Radiobutton"} {
@@ -1899,7 +1913,8 @@ proc updateSourceList {} {
         pack [button .top.sources.otherdevices -text "Other.." \
         -command "listOtherDevices .top.sources.otherdevices"] -side left
     }
-    pack [button .top.sources.files -text "Files.." -command loadFile] -side left
+    set file_label [expr {($LoadFileMode == 1) ? "Files..>>" : "Files.."}]
+    pack [button .top.sources.files -text $file_label -command loadFile] -side left
     foreach w "loadfile1 loadfile2 loadfile3" afile "[lrange $LoadedFiles 0 2]" {
         if {[file exists $afile]} {
             set afile [escapeSpace $afile]
@@ -1908,6 +1923,8 @@ proc updateSourceList {} {
             -command "loadFile $afile"] -side left
         }
     }
+    bind .top.sources.files <2> "after 200 showOption:FileLoadMode .top.sources.files"
+    bind .top.sources.files <3> "after 200 showOption:FileLoadMode .top.sources.files"
     pack [button .top.sources.filehistory -text History -command "after 0 showHistoryList .top.sources.filehistory"] -side left
     #  showHistoryList
     #  bind .top.sources.filehistory <1> {tk_popup .loadhistory %X %Y}
@@ -1933,6 +1950,22 @@ proc listOtherDevices {w} {
         }
         $m add radiobutton -label $name -value $device -variable Device -command loadDevice
     }
+    set x [expr [winfo rootx $w] + [winfo width $w]]
+    set y [winfo rooty $w]
+    tk_popup $m $x $y
+}
+
+proc showOption:FileLoadMode {w} {
+    global Device LoadFileMode
+    set m .opt_load_file_mode
+    if {[winfo exist $m]} {
+        destroy $m
+    }
+    menu $m -tearoff 0
+    $m add radiobutton -label "Load File Mode: One Shot" -variable LoadFileMode -value "0" \
+    -background blue -command "$w config -text \"Files..\" ; openSource"
+    $m add radiobutton -label "Load File Mode: Incrementaly" -variable LoadFileMode -value "1" -background green \
+    -command "$w config -text \"Files..>>\" ; openSource"
     set x [expr [winfo rootx $w] + [winfo width $w]]
     set y [winfo rooty $w]
     tk_popup $m $x $y
