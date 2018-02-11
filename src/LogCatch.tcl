@@ -70,19 +70,6 @@ set pIndex 0.0
 set sDir -forward
 set sCnt 0
 # Highlight
-set hWord1 ""
-set hWord1Color "#ff7777"
-set hWord1Cnt ""
-set hWord2 ""
-set hWord2Color "#ff7777"
-set hWord2Cnt ""
-set hWord3 ""
-set hWord3Color "#ff7777"
-set hWord3Cnt ""
-set hWord4 ""
-set hWord5 ""
-set hWord6 ""
-set hWord7 ""
 set AUTO_HIGHLIGHT_DELAY 1111
 
 set LastKeyPress ""
@@ -356,53 +343,38 @@ pack $fsrch -fill x
 
 # Highlight
 pack [label $fsrch.highlight -text "Highlight:"] -side left
-pack [entry $fsrch.hword1 -textvariable hWord1 -bg lightblue] -side left
-pack [label $fsrch.hword1cnt -text "" -bg lightblue] -side left
-pack [entry $fsrch.hword6 -textvariable hWord6 -bg aquamarine1] -side left
-pack [label $fsrch.hword6cnt -text "" -bg aquamarine1] -side left
-pack [entry $fsrch.hword2 -textvariable hWord2 -bg lightgreen] -side left
-pack [label $fsrch.hword2cnt -text "" -bg lightgreen] -side left
-pack [entry $fsrch.hword7 -textvariable hWord7 -bg yellow] -side left
-pack [label $fsrch.hword7cnt -text "" -bg yellow] -side left
-pack [entry $fsrch.hword5 -textvariable hWord5 -bg LightSalmon1] -side left
-pack [label $fsrch.hword5cnt -text "" -bg LightSalmon1] -side left
-pack [entry $fsrch.hword3 -textvariable hWord3 -bg pink] -side left
-pack [label $fsrch.hword3cnt -text "" -bg pink] -side left
-pack [entry $fsrch.hword4 -textvariable hWord4 -bg white] -side left
-pack [label $fsrch.hword4cnt -text "" -bg white] -side left
-if {$OS == "Darwin"} {
-    foreach idx {1 2 3 4 5 6 7} {
-        $fsrch.hword${idx} config -width 15
+global LogLevelTags
+set LogLevelTags [list colorBlk colorBlu colorGre colorOrg colorRed]
+# load text color LogLevelTags
+source $runDir/text_color_loader.tcl
+set colorIndex 1
+foreach colorTag [lsort [array names TextColorTags]] {
+    if {[lsearch "$LogLevelTags" $colorTag] >= 0} {
+        # puts "$colorTag continue"
+        continue
     }
+    set fgcolor [lindex $TextColorTags($colorTag) 0]
+    set bgcolor [lindex $TextColorTags($colorTag) 1]
+    set fgoption ""
+    if {$fgcolor != ""} {
+        set fgoption "-foreground $fgcolor"
+    }
+    set bgoption ""
+    if {$bgcolor != ""} {
+        set bgoption "-background $bgcolor"
+    }
+    puts "highlightColor fg:$fgoption bg:$bgoption"
+    pack [eval entry ${fsrch}.hword${colorIndex} -textvariable hWord(${colorTag}) $fgoption $bgoption] -side left
+    pack [eval label ${fsrch}.hword${colorIndex}cnt $fgoption $bgoption] -side left
+    bind ${fsrch}.hword${colorIndex} <Return> "highlightWord $colorTag"
+    bind ${fsrch}.hword${colorIndex} <KeyPress> "autoHighlight $colorTag"
+    bind ${fsrch}.hword${colorIndex} <KeyPress> "+seekHighlight $colorTag %K"
+    set HighlightWord($colorTag) "${fsrch}.hword${colorIndex} 0 0 1.0 {}"
+    if {$OS == "Darwin"} {
+        ${fsrch}.hword${colorIndex} config -width 13
+    }
+    incr colorIndex
 }
-bind $fsrch.hword1 <Return> "highlightWord colorLbl"
-bind $fsrch.hword2 <Return> "highlightWord colorLgr"
-bind $fsrch.hword3 <Return> "highlightWord colorPnk"
-bind $fsrch.hword4 <Return> "highlightWord colorWht"
-bind $fsrch.hword5 <Return> "highlightWord colorLSm"
-bind $fsrch.hword6 <Return> "highlightWord colorAQm"
-bind $fsrch.hword7 <Return> "highlightWord colorYel"
-bind $fsrch.hword1 <KeyPress> "autoHighlight colorLbl"
-bind $fsrch.hword2 <KeyPress> "autoHighlight colorLgr"
-bind $fsrch.hword3 <KeyPress> "autoHighlight colorPnk"
-bind $fsrch.hword4 <KeyPress> "autoHighlight colorWht"
-bind $fsrch.hword5 <KeyPress> "autoHighlight colorLSm"
-bind $fsrch.hword6 <KeyPress> "autoHighlight colorAQm"
-bind $fsrch.hword7 <KeyPress> "autoHighlight colorYel"
-bind $fsrch.hword1 <KeyPress> "+seekHighlight colorLbl %K"
-bind $fsrch.hword2 <KeyPress> "+seekHighlight colorLgr %K"
-bind $fsrch.hword3 <KeyPress> "+seekHighlight colorPnk %K"
-bind $fsrch.hword4 <KeyPress> "+seekHighlight colorWht %K"
-bind $fsrch.hword5 <KeyPress> "+seekHighlight colorLSm %K"
-bind $fsrch.hword6 <KeyPress> "+seekHighlight colorAQm %K"
-bind $fsrch.hword7 <KeyPress> "+seekHighlight colorYel %K"
-set HighlightWord(colorLbl) "$fsrch.hword1 0 0 1.0 {}"
-set HighlightWord(colorLgr) "$fsrch.hword2 0 0 1.0 {}"
-set HighlightWord(colorPnk) "$fsrch.hword3 0 0 1.0 {}"
-set HighlightWord(colorWht) "$fsrch.hword4 0 0 1.0 {}"
-set HighlightWord(colorLSm) "$fsrch.hword5 0 0 0.0 {}"
-set HighlightWord(colorAQm) "$fsrch.hword6 0 0 0.0 {}"
-set HighlightWord(colorYel) "$fsrch.hword7 0 0 0.0 {}"
 
 proc entryVcmd {} {
     global LastKeyPress
@@ -439,26 +411,21 @@ pack $r.l -anchor e -fill both -expand yes
 pack $r.s0 -anchor s -fill x
 global logview
 set logview $r.l
-# click menu
-$logview tag config colorBlk -foreground white
-$logview tag config colorBlu -foreground lightblue
-$logview tag config colorGre -foreground chartreuse3;# "#15b742"
-$logview tag config colorOrg -foreground orange
-$logview tag config colorRed -foreground red
-global tags
-set tags [list colorBlk colorBlu colorGre colorOrg colorRed]
+foreach colorTag [array names TextColorTags] {
+    set fgcolor [lindex $TextColorTags($colorTag) 0]
+    set bgcolor [lindex $TextColorTags($colorTag) 1]
+    set fgoption ""
+    if {$fgcolor != ""} {
+        set fgoption "-foreground $fgcolor"
+    }
+    set bgoption ""
+    if {$bgcolor != ""} {
+        set bgoption "-background $bgcolor"
+    }
+    puts "make tag fg:$fgoption bg:$bgoption"
+    eval $logview tag config $colorTag -foreground $fgcolor $bgoption
+}
 
-# search colors
-$logview tag config colorYel -background yellow -foreground black
-$logview tag config colorPnk -background pink -foreground black
-$logview tag config colorPup -background purple -foreground white
-$logview tag config colorOra -background orange -foreground black -relief raised
-# search highlight colors
-$logview tag config colorWht -background white -foreground black
-$logview tag config colorLbl -background lightblue -foreground black
-$logview tag config colorLgr -background lightgreen -foreground black
-$logview tag config colorLSm -background LightSalmon1 -foreground black
-$logview tag config colorAQm -background aquamarine1 -foreground black
 
 menu .logmenu -tearoff 0
 .logmenu add command -label "Save all lines" -command "saveLines all"
@@ -537,7 +504,7 @@ proc addCheckBtn {w ww text} {
 }
 
 proc getTag {loglevel} {
-    global tags LogLevels LastLogLevel
+    global LogLevelTags LogLevels LastLogLevel
     if {[lsearch $LogLevels $loglevel] == -1 && [lsearch $LogLevels $LastLogLevel] > -1} {
         set loglevel $LastLogLevel
     }
@@ -553,7 +520,7 @@ proc getTag {loglevel} {
         incr index 4
     }
     set LastLogLevel $loglevel
-    return [lindex $tags $index]
+    return [lindex $LogLevelTags $index]
 }
 
 proc logcat {{clear 1} fd {doFilter 0}} {
@@ -897,7 +864,7 @@ proc loadPreference {} {
 
 proc saveLastState {} {
     global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace \
-TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogViewFontSize FilterDeadProcess
+TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess
     global LoadFileMode
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
@@ -937,20 +904,11 @@ TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogVi
         puts $fdW $MenuFace
         puts $fdW ":TagFilter"
         puts $fdW $TagFilter
-        puts $fdW ":hWord1"
-        puts $fdW $hWord1
-        puts $fdW ":hWord2"
-        puts $fdW $hWord2
-        puts $fdW ":hWord3"
-        puts $fdW $hWord3
-        puts $fdW ":hWord4"
-        puts $fdW $hWord4
-        puts $fdW ":hWord5"
-        puts $fdW $hWord5
-        puts $fdW ":hWord6"
-        puts $fdW $hWord6
-        puts $fdW ":hWord7"
-        puts $fdW $hWord7
+        # HighlightWords
+        foreach colorTag [array names hWord] {
+            puts $fdW ":hWord(${colorTag})"
+            puts $fdW $hWord(${colorTag})
+        }
         puts $fdW ":LogViewFontName"
         puts $fdW $LogViewFontName
         puts $fdW ":LogViewFontSize"
@@ -966,7 +924,7 @@ TagFilter hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogVi
 
 proc loadLastState {} {
     global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace TagFilter
-    global hWord1 hWord2 hWord3 hWord4 hWord5 hWord6 hWord7 LogViewFontName LogViewFontSize FilterDeadProcess
+    global hWord LogViewFontName LogViewFontSize FilterDeadProcess LogLevelTags TextColorTags
     global LoadFileMode
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
@@ -978,6 +936,7 @@ proc loadLastState {} {
     }
     if {! [file readable $dir/$loadLastState]} { return }
     set fd [open $dir/$loadLastState r]
+    set colorTags [array names TextColorTags]
     if {$fd != ""} {
         set flag 0
         while {[gets $fd line] > -1} {
@@ -1006,20 +965,12 @@ proc loadLastState {} {
                     set flag 11
                 } elseif {[string match ":TagFilter" $line]} {
                     set flag 12
-                } elseif {[string match ":hWord1" $line]} {
-                    set flag 13
-                } elseif {[string match ":hWord2" $line]} {
-                    set flag 14
-                } elseif {[string match ":hWord3" $line]} {
-                    set flag 15
-                } elseif {[string match ":hWord4" $line]} {
-                    set flag 16
-                } elseif {[string match ":hWord5" $line]} {
-                    set flag 17
-                } elseif {[string match ":hWord6" $line]} {
-                    set flag 18
-                } elseif {[string match ":hWord7" $line]} {
-                    set flag 19
+                } elseif {[string match ":hWord(*" $line]} {
+                    set colorTag [lindex [split $line "()"] 1]
+                    if {[lsearch $LogLevelTags $colorTag] == -1 && [lsearch $colorTags $colorTag] >= 0} {
+                        gets $fd line
+                        set hWord($colorTag) $line
+                    }
                 } elseif {[string match ":LogViewFontName" $line]} {
                     set flag 20
                 } elseif {[string match ":LogViewFontSize" $line]} {
@@ -1055,20 +1006,6 @@ proc loadLastState {} {
                 set MenuFace $line
             } elseif {$flag == 12} { 
                 set TagFilter $line
-            } elseif {$flag == 13} { 
-                set hWord1 $line
-            } elseif {$flag == 14} { 
-                set hWord2 $line
-            } elseif {$flag == 15} { 
-                set hWord3 $line
-            } elseif {$flag == 16} { 
-                set hWord4 $line
-            } elseif {$flag == 17} { 
-                set hWord5 $line
-            } elseif {$flag == 18} { 
-                set hWord6 $line
-            } elseif {$flag == 19} { 
-                set hWord7 $line
             } elseif {$flag == 20} { 
                 set LogViewFontName $line
             } elseif {$flag == 21} { 
@@ -1280,6 +1217,7 @@ proc highlightWord {colorTag {word ""}} {
     }
     # puts "highlightWord: $word from: $index cnt: $sCnt"
 
+    set cnt $sCnt
     while 1 {
         # puts "\"$word $index\""
         set index [$logview search -count wordLen -- "$word" $index end]
@@ -1290,10 +1228,13 @@ proc highlightWord {colorTag {word ""}} {
         $logview tag add $colorTag $index "$index + $wordLen chars"
         set index [$logview index "$index + $wordLen chars"]
     }
-    if {$sCnt == 0} {
-        ${wentry}cnt config -text ""
-    } else {
-        ${wentry}cnt config -text $sCnt
+    set cntText ""
+    if {$sCnt > 0} {
+        set cntText "$sCnt"
+    }
+    ${wentry}cnt config -text $cntText
+    if {$sCnt > $cnt} {
+        $logview tag raise $colorTag
     }
     # set HighlightWord($colorTag) "$wentry 0 $sCnt 0.0 {}"
     set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 2 2 $sCnt]

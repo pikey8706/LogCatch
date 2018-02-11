@@ -1,0 +1,20 @@
+# ColorTagName foreground background
+:TextColorTags
+# log level colors (Do Not Modify)
+colorBlk white
+colorBlu lightblue
+colorGre chartreuse3
+colorOrg orange
+colorRed red
+# search highlight colors (manual add OK)
+color1Lbl black lightblue
+color2AQm black aquamarine1
+color3Lgr black lightgreen
+color4Pup white purple
+color5Pnk black pink
+color6LSm black lightSalmon1
+color7Yel black yellow
+color8Wht black white
+ # color9Red black red
+ # color9Ora black orange
+:
