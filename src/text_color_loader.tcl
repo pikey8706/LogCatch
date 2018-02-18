@@ -30,9 +30,9 @@ proc load_text_color_tags {filename} {
 set configDir "config"
 set configFile "text_color_tags.list"
 set separator "/"
-if {$PLATFORM == "windows"} {
-    set separator "¥"
-}
+#if {$PLATFORM == "windows"} {
+#   set separator "¥"
+#}
 
 set configPath "${runDir}${separator}..${separator}${configDir}${separator}${configFile}"
 
