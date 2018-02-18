@@ -1,2 +1,2 @@
 #!/bin/bash
-wish ./src/LogCatch.tcl --dir src
+wish ./src/LogCatch.tcl --dir src &
