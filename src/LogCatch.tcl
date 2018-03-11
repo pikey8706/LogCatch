@@ -1904,8 +1904,8 @@ proc showOption:FileLoadMode {w} {
     }
     menu $m -tearoff 0
     $m add radiobutton -label "Load File Mode: One Shot" -variable LoadFileMode -value "0" \
-    -background blue -command "$w config -text \"Files..\" ; openSource"
-    $m add radiobutton -label "Load File Mode: Incrementaly" -variable LoadFileMode -value "1" -background green \
+    -foreground orange -command "$w config -text \"Files..\" ; openSource"
+    $m add radiobutton -label "Load File Mode: Incrementaly" -variable LoadFileMode -value "1" -foreground green \
     -command "$w config -text \"Files..>>\" ; openSource"
     set x [expr [winfo rootx $w] + [winfo width $w]]
     set y [winfo rooty $w]
