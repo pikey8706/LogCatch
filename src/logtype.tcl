@@ -1,6 +1,6 @@
 set LogTypes "raw brief process tag time thread threadtime long time_eclipse studio"
 set LogType "raw"
-set LogLevels "V D I W E A"
+set LogLevels "V D I W E A F"
 
 # check first 6 line
 proc checkLogType {filename} {
