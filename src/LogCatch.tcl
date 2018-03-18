@@ -559,7 +559,7 @@ proc readLine {fd} {
         #$logview insert end $EndLabel colorBlk
         $logview config -state disabled
         $statusTwo config -text $EOFLabel -fg red
-        closeFd
+        closeLoadingFd
         closeWaitingFd
         return
     }
@@ -817,7 +817,7 @@ proc showAbout {} {
 
 proc safeQuit {} {
     catch {puts safequit} msg
-    closeFd
+    closeLoadingFd
     closeWaitingFd
     saveLastState
     exit 0
@@ -1030,7 +1030,7 @@ proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
     statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag \
     LoadFileMode
-    closeFd
+    closeLoadingFd
     set deny "!"
     set isFileSource [string match "file:*" $Device]
     puts "isFileSource: $isFileSource"
@@ -1097,7 +1097,7 @@ set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"NR > 0 && $Proc
     }
 }
 
-proc closeFd {} {
+proc closeLoadingFd {} {
     global Fd
     if {$Fd != ""} {
         fconfigure $Fd -blocking 0
