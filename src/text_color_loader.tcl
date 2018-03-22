@@ -14,7 +14,7 @@ proc load_text_color_tags {filename} {
                 set colorTag [lindex $line 0]
                 set fgcolor [lindex $line 1]
                 set bgcolor [lindex $line 2]
-                set TextColorTags($colorTag) "$fgcolor $bgcolor"
+                set TextColorTags($colorTag) "{$fgcolor} {$bgcolor}"
                 incr loadCnt
             } elseif {!$reading && [regexp "$COLOR_TAG" "$line"]} {
                 set reading 1

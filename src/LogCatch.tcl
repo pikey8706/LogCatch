@@ -343,8 +343,9 @@ pack $fsrch -fill x
 
 # Highlight
 pack [label $fsrch.highlight -text "Highlight:"] -side left
-global LogLevelTags
+global LogLevelTags TextViewColorOptions
 set LogLevelTags [list colorBlk colorBlu colorGre colorOrg colorRed]
+set TextViewColorTag "colorTextView"
 # load text color LogLevelTags
 source $runDir/text_color_loader.tcl
 set colorIndex 1
@@ -362,6 +363,10 @@ foreach colorTag [lsort [array names TextColorTags]] {
     set bgoption ""
     if {$bgcolor != ""} {
         set bgoption "-background $bgcolor"
+    }
+    if {$colorTag == $TextViewColorTag} {
+        set TextViewColorOptions "$fgoption $bgoption"
+        continue
     }
     puts "highlightColor fg:$fgoption bg:$bgoption"
     pack [eval entry ${fsrch}.hword${colorIndex} -textvariable hWord(${colorTag}) $fgoption $bgoption] -side left
@@ -396,7 +401,8 @@ pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -side right
 # logview text/listbox
 if {1} {
     set LogView $r.l
-    text $r.l -bg "#000000" -xscrollcommand "$r.s0 set" -yscrollcommand "$r.s1 set" -wrap $WrapMode
+    puts "TextView Options: $TextViewColorOptions"
+    eval text $r.l $TextViewColorOptions -xscrollcommand \"$r.s0 set\" -yscrollcommand \"$r.s1 set\" -wrap $WrapMode
     scrollbar $r.s0 -orient horizontal -command "$r.l xview"
     scrollbar $r.s1 -command "$r.l yview"
     #grid $r.l -row 0 -column 0 -sticky nsew
@@ -412,6 +418,9 @@ pack $r.s0 -anchor s -fill x
 global logview
 set logview $r.l
 foreach colorTag [array names TextColorTags] {
+    if {$colorTag == $TextViewColorTag} {
+        continue
+    }
     set fgcolor [lindex $TextColorTags($colorTag) 0]
     set bgcolor [lindex $TextColorTags($colorTag) 1]
     set fgoption ""
