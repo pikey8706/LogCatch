@@ -1,0 +1,7 @@
+#!/bin/sh
+#wish
+cwd=$(dirname $0)
+echo "run in" $cwd
+wish $cwd/src/LogCatch.tcl --dir $cwd/src 
+exit 0
+# #!/bin/bash

@@ -1,7 +1,8 @@
 LogCatch
 ===
-android adb logcat viewer for Linux/Mac/Windows
-
+Log viewer for Linux/Mac/Windows.
+First desigend for android adb logcat viewer.
+Now you can use this for general log viewer by easy filtering and highlighting.
 This is written in tcl/tk.
 
 Spec:
@@ -13,17 +14,18 @@ Spec:
 - View adb logcat logs from a device.
 
 ## Requirement
-You need to prepare commands: wish, awk, and adb.
+You need to prepare commands: wish, awk, and adb(for android).
 
 Linux:
-tk package, android-sdk for adb, awk.
+awk for filtering, tk package for GUI, and android-sdk for adb.
 
 Mac:
-android-sdk for adb
+android-sdk for adb.
 
 Windows:
 bash, wish, awk, android-sdk for adb.
 I recommed to install msys-git. This contains git, bash, awk, wish.
+No warranty for subsystem-linux on windows 10. Only mysy-git is supported.
 
 ## Install
 Linux:
@@ -39,25 +41,27 @@ Install from : https://git-for-windows.github.io/
 Or active tcl may work().
 
 ## Usage
-To boot app
+To launch app
 
 Linux/Mac user
+- git clone https://github.com/pikey8706/LogCatch.git
+- open LogCatch folder.
+- Just W-click [runOnShell].
 <pre>
-wish src/LogCatch.tcl --dir src
+on terminal.
+$ runOnShell
+or
+$ wish src/LogCatch.tcl --dir src
 </pre>
 
 Windows user
 Assuming you have done installed msys-git.
+- git clone https://github.com/pikey8706/LogCatch.git
+or
 - Download zip file: https://github.com/pikey8706/LogCatch/archive/master.zip
 - unzip LogCatch-master.zip
 - open LogCatch-master folder.
-- Right click in folder.
-- click Git bash (Here) menu.
-- type below in bash window.
-<pre>
-wish src/LogCatch.tcl --dir src
-</pre>
-- Or simply double click logcatch.vbs in the folder.
+- Just W-click [LogCatch_winLauncher.vbs]. This automatically resolve path for wish/bash/awk in msys-git windows enviroment.
 - Please create shortcut lancher by yourself.
 
 To see log from devices after app launched, do below please.
