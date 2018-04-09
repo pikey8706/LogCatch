@@ -139,7 +139,7 @@ pack [button .b.b -text Editor -command openEditor] -side left
 
 # top menu
 menu .mbar
-. config -menu .mbar
+#. config -menu .mbar
 # Apple menu
 # menu .mbar.apple
 # .mbar add cascade -menu .mbar.apple 
@@ -1531,7 +1531,7 @@ proc saveLines {{which "all"}} {
     }
 }
 
-proc getModel {device} {
+proc getModelOS {device} {
     global CONST_MODEL CONST_VERSION ADB_PATH
     set model [exec $ADB_PATH -s $device shell getprop $CONST_MODEL]
     set m ""
@@ -1566,7 +1566,7 @@ proc getDevices {} {
             }
             if {$model != "null" || [lindex $line 1] == "device"} {
             # if {$model == "null"} {
-                set model [getModel $serial]
+                set model [getModelOS $serial]
             # }
                 lappend devices "$model:$serial"
             }
@@ -1586,12 +1586,14 @@ proc getSerial {device {lower 0}} {
 }
 
 proc detectDevices {} {
-    global Device Devices OS
+    global Device Devices OS MenuFace
     getDevices
-    set idx [expr {$OS =="Darwin" ? "2" : "3"}]
-    .mbar.i.d delete $idx end
-    foreach device $Devices {
-        .mbar.i.d add radiobutton -label $device -variable Device -value $device -command loadDevice
+    if {$MenuFace != "button"} {
+       set idx [expr {$OS =="Darwin" ? "2" : "3"}]
+       .mbar.i.d delete $idx end
+       foreach device $Devices {
+           .mbar.i.d add radiobutton -label $device -variable Device -value $device -command loadDevice
+       }
     }
     updateSourceList
     return [lindex $Devices 0]
