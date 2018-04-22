@@ -558,6 +558,7 @@ proc logcat {{clear 1} fd {doFilter 0}} {
         }
         # show logcat from not only device
         fileevent $Fd r "readLine $fd"
+        fconfigure $Fd -translation auto;#"crlf lf"
     }
 }
 
@@ -575,7 +576,7 @@ proc readLine {fd} {
 
     gets $fd line
 
-    if {"$line" != ""} {
+    #if {"$line" != ""} {
         set loglevel [getLogLevel "$line"]
         set tag [getTag $loglevel]
         incr LineCount
@@ -583,7 +584,7 @@ proc readLine {fd} {
         $logview config -state disabled
         $statusOne config -text $LineCount
         updateView
-    }
+    #}
 }
 
 proc updateView {} {
