@@ -21,6 +21,10 @@ set LogTypes "brief process tag thread raw time threadtime long"
 set Devices ""
 set Device ""
 set Fd ""
+set AutoSaveDeviceLog 1
+set AutoSaveFileName ""
+set AutoSaveDirectory "$env(HOME)/${AppName}_AutoSavedDeviceLogs"
+set AutoSaveProcessId ""
 set PrevLoadFile ""
 set LoadFile ""
 set LoadedFiles ""
@@ -571,6 +575,7 @@ proc readLine {fd} {
         $statusTwo config -text $EOFLabel -fg red
         closeLoadingFd
         closeWaitingFd
+        stopAutoSavingFile
         return
     }
 
@@ -622,7 +627,9 @@ proc loadFile {{filename ""}} {
         set LoadFile $filename
         set Device "file:$filename"
         addLoadedFiles $filename
+        closeLoadingFd
         closeWaitingFd
+        stopAutoSavingFile
         clearSearchAll
         clearHighlightAll
         changeEncoding
@@ -660,7 +667,9 @@ proc updateLoadedFiles {} {
 
 proc loadDevice {} {
     global Devices Device Encoding ADB_PATH statusTwo WaitingLabel WaitingFd
+    closeLoadingFd
     closeWaitingFd
+    stopAutoSavingFile
     set devices $Device
     foreach xdevice $Devices {
         if {![string match $Device $xdevice]} {
@@ -674,15 +683,26 @@ proc loadDevice {} {
     $statusTwo config -text $WaitingLabel -fg orange
     set WaitingFd [open "| $ADB_PATH -s $serial wait-for-device" "r"]
     if {$WaitingFd != "" && [tell $WaitingFd] == -1} {
-        fileevent $WaitingFd r delayedOpenSource
+        fileevent $WaitingFd r "delayedOpenSource $serial"
     }
 }
 
-proc delayedOpenSource {} {
-    global CONST_DEFAULT_ENCODING
+proc delayedOpenSource {serial} {
+    global CONST_DEFAULT_ENCODING ADB_PATH AutoSaveDeviceLog AutoSaveProcessId AutoSaveDirectory AutoSaveFileName
     puts "delayedOpenSource"
     closeWaitingFd
     # exec $ADB_PATH -s $serial wait-for-device
+    if {$AutoSaveDeviceLog} {
+        stopAutoSavingFile
+        set autoSaveFileName [getAutoSaveFileName]
+        set AutoSaveFileName "$AutoSaveDirectory/$autoSaveFileName"
+        if {[file exists $AutoSaveFileName]} {
+            file rename $AutoSaveFileName $AutoSaveDirectory/old_${autoSaveFileName}
+        }
+        puts "openAutoSavingFile: $AutoSaveFileName"
+        set AutoSaveProcessId [exec $ADB_PATH -s $serial logcat -v threadtime > $AutoSaveFileName &]
+        puts "AutoSaveProcessId: $AutoSaveProcessId"
+    }
     updateProcessFilters
     changeEncoding $CONST_DEFAULT_ENCODING disabled
     openSource
@@ -696,6 +716,20 @@ proc closeWaitingFd {} {
         fconfigure $WaitingFd -blocking 0
         close $WaitingFd
         set WaitingFd ""
+    }
+}
+
+proc stopAutoSavingFile {} {
+    global AutoSaveProcessId OS
+    if {$AutoSaveProcessId != ""} {
+        if {$OS == "Windows"} {
+            puts "taskkill /F /PID $AutoSaveProcessId"
+            exec  taskkill /F /PID $AutoSaveProcessId
+        } else {
+            puts "kill -9 $AutoSaveProcessId"
+            exec kill -9 $AutoSaveProcessId
+        }
+        set AutoSaveProcessId ""
     }
 }
 
@@ -829,6 +863,7 @@ proc safeQuit {} {
     catch {puts safequit} msg
     closeLoadingFd
     closeWaitingFd
+    stopAutoSavingFile
     saveLastState
     exit 0
 }
@@ -1036,15 +1071,36 @@ proc loadLastState {} {
     }
 }
 
+proc initAutoSaveDirectory {} {
+    global AutoSaveDirectory
+    if {! [file isdirectory $AutoSaveDirectory]} {
+        file mkdir $AutoSaveDirectory
+    }
+}
+initAutoSaveDirectory
+
+proc getAutoSaveFileName {} {
+    global Device
+    set splitname [split $Device :]
+    set modelOs [lindex $splitname 0]
+    set model [lindex [split $modelOs "/"] 0]
+    set os [lindex [split $modelOs "/"] 1]
+    set device [lindex $splitname 1]
+    set port [lindex $splitname 2]
+    set dateTime [exec date +%Y_%m%d_%H%M%S]
+    set fileName "${dateTime}_OS${os}_${model}.txt"
+    return "$fileName"
+}
+
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
     statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag \
-    LoadFileMode
+    LoadFileMode AutoSaveDeviceLog AutoSaveFileName
     closeLoadingFd
     set deny "!"
     set isFileSource [string match "file:*" $Device]
     puts "isFileSource: $isFileSource"
-    updateProcessTagFilter $isFileSource
+    updateProcessTagFilterExpression $isFileSource
     set xiFilter [checkEscapeAll [escapeSlash "$iFilter"]]
     set xeFilter [checkEscapeAll [escapeSlash "$eFilter"]]
     if {$eFilter == ""} {
@@ -1089,7 +1145,12 @@ proc openSource {} {
         set LogType threadtime
         reloadProc
 #set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterExpression/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
+puts "AutoSaveDeviceLog: $AutoSaveDeviceLog file: $AutoSaveFileName"
+if {$AutoSaveDeviceLog} {
+set Fd [open "|tail -f -n +1 $AutoSaveFileName | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+} else {
 set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+}
     }
     puts "src: $Device fd: $Fd"
     puts "LevelFilter => $LevelFilter $lvlAndOr"
@@ -1784,7 +1845,7 @@ proc changeProcessTagComplex {w} {
     }
 }
 
-proc updateProcessTagFilter {isFileSource} {
+proc updateProcessTagFilterExpression {isFileSource} {
     global ProcessAndOrTag ProcessFilterExpression TagFilter ProcessTagFilter
     set filter ""
     set tfilter ""
