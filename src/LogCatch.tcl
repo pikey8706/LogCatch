@@ -910,7 +910,7 @@ proc loadPreference {} {
 proc saveLastState {} {
     global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace \
 TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess
-    global LoadFileMode
+    global LoadFileMode AutoSaveDeviceLog
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
     if {! [file isdirectory $dir]} {
@@ -962,6 +962,8 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess
         puts $fdW $FilterDeadProcess
         puts $fdW ":LoadFileMode"
         puts $fdW $LoadFileMode
+        puts $fdW ":AutoSaveDeviceLog"
+        puts $fdW $AutoSaveDeviceLog
         puts $fdW ":"
         close $fdW
     }
@@ -970,7 +972,7 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess
 proc loadLastState {} {
     global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace TagFilter
     global hWord LogViewFontName LogViewFontSize FilterDeadProcess LogLevelTags TextColorTags
-    global LoadFileMode
+    global LoadFileMode AutoSaveDeviceLog
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
     if {! [file isdirectory $dir]} {
@@ -1024,6 +1026,8 @@ proc loadLastState {} {
                     set flag 22
                 } elseif {[string match ":LoadFileMode" $line]} {
                     set flag 23
+                } elseif {[string match ":AutoSaveDeviceLog" $line]} {
+                    set flag 24
                 } else {
                     set flag 0
                 }
@@ -1059,6 +1063,8 @@ proc loadLastState {} {
                 set FilterDeadProcess $line
             } elseif {$flag == 23} {
                 set LoadFileMode $line
+            } elseif {$flag == 24} {
+                set AutoSaveDeviceLog $line
             } else {
             }
         }
@@ -1899,14 +1905,17 @@ proc getSerial7 {serialraw} {
 }
 
 proc updateSourceList {} {
-    global Devices Device LoadFile PrevLoadFile LoadedFiles LoadFileMode
+    global Devices Device LoadFile PrevLoadFile LoadedFiles LoadFileMode AutoSaveDeviceLog
     foreach one [winfo children .top.sources] {
         # puts "destroy\ $one\ [winfo class $one]"
     #    if {[winfo class $one] == "Radiobutton"} {
         destroy $one
     #    }
     }
-    pack [button .top.sources.devices -text "Devices.." -command detectDevices] -side left
+    set device_label [expr {($AutoSaveDeviceLog == 1) ? "Devices..>>" : "Devices.."}]
+    pack [button .top.sources.devices -text $device_label -command detectDevices] -side left
+    bind .top.sources.devices <2> "after 200 showOption:AutoSaveMode .top.sources.devices"
+    bind .top.sources.devices <3> "after 200 showOption:AutoSaveMode .top.sources.devices"
     set dlen [llength $Devices]
     foreach device [lrange $Devices 0 2] {
         set seriallow [getSerial $device 1]
@@ -1977,9 +1986,25 @@ proc showOption:FileLoadMode {w} {
     }
     menu $m -tearoff 0
     $m add radiobutton -label "Load File Mode: One Shot" -variable LoadFileMode -value "0" \
-    -foreground orange -command "$w config -text \"Files..\" ; openSource"
+    -foreground orange -command "$w config -text \"Files..\""
     $m add radiobutton -label "Load File Mode: Incrementaly" -variable LoadFileMode -value "1" -foreground green \
-    -command "$w config -text \"Files..>>\" ; openSource"
+    -command "$w config -text \"Files..>>\""
+    set x [expr [winfo rootx $w] + [winfo width $w]]
+    set y [winfo rooty $w]
+    tk_popup $m $x $y
+}
+
+proc showOption:AutoSaveMode {w} {
+    global Device AutoSaveDeviceLog
+    set m .opt_autp_save_device_log_mode
+    if {[winfo exist $m]} {
+        destroy $m
+    }
+    menu $m -tearoff 0
+    $m add radiobutton -label "Auto Save Device Log Mode: None" -variable AutoSaveDeviceLog -value "0" \
+    -foreground orange -command "$w config -text \"Devices..\""
+    $m add radiobutton -label "Auto Save Device Log Mode: Auto" -variable AutoSaveDeviceLog -value "1" -foreground green \
+    -command "$w config -text \"Devices..>>\""
     set x [expr [winfo rootx $w] + [winfo width $w]]
     set y [winfo rooty $w]
     tk_popup $m $x $y
