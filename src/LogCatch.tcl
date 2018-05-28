@@ -21,7 +21,7 @@ set LogTypes "brief process tag thread raw time threadtime long"
 set Devices ""
 set Device ""
 set Fd ""
-set AutoSaveDeviceLog 1
+set AutoSaveDeviceLog 0; # default: 0
 set AutoSaveFileName ""
 set AutoSaveDirectory "$env(HOME)/${AppName}_AutoSavedDeviceLogs"
 set AutoSaveProcessId ""
@@ -720,9 +720,9 @@ proc closeWaitingFd {} {
 }
 
 proc stopAutoSavingFile {} {
-    global AutoSaveProcessId OS
+    global AutoSaveProcessId PLATFORM
     if {$AutoSaveProcessId != ""} {
-        if {$OS == "Windows"} {
+        if {$PLATFORM == "windows"} {
             puts "taskkill /F /PID $AutoSaveProcessId"
             exec  taskkill /F /PID $AutoSaveProcessId
         } else {
