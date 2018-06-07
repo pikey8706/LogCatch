@@ -23,7 +23,8 @@ set Device ""
 set Fd ""
 set AutoSaveDeviceLog 0; # default: 0
 set AutoSaveFileName ""
-set AutoSaveDirectory "$env(HOME)/${AppName}_AutoSavedDeviceLogs"
+set HOME_PATH [regsub -all "\\\\" "$env(HOME)" "/"]; # switch windows path to unix path
+set AutoSaveDirectory "$HOME_PATH/${AppName}_AutoSavedDeviceLogs"
 set AutoSaveProcessId ""
 set PrevLoadFile ""
 set LoadFile ""
@@ -722,12 +723,17 @@ proc closeWaitingFd {} {
 proc stopAutoSavingFile {} {
     global AutoSaveProcessId PLATFORM
     if {$AutoSaveProcessId != ""} {
+        set err_status 0
+        set err_msg ""
         if {$PLATFORM == "windows"} {
             puts "taskkill /F /PID $AutoSaveProcessId"
-            exec  taskkill /F /PID $AutoSaveProcessId
+            set err_status [catch {exec  taskkill /F /PID $AutoSaveProcessId} err_msg]
         } else {
             puts "kill -9 $AutoSaveProcessId"
-            exec kill -9 $AutoSaveProcessId
+            set err_status [catch {exec kill -9 $AutoSaveProcessId} err_msg]
+        }
+        if {$err_status} {
+            puts "err_msg: $err_msg"
         }
         set AutoSaveProcessId ""
     }
