@@ -346,6 +346,8 @@ pack $fsrch -fill x
 #pack [entry $fsrch.4 -textvariable s4Word] -side left -fill x
 #pack [entry $fsrch.5 -textvariable s5Word] -side left -fill x
 
+# Clear Log
+pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -side right
 # Highlight
 pack [label $fsrch.highlight -text "Highlight:"] -side left
 global LogLevelTags TextViewColorOptions
@@ -396,9 +398,6 @@ proc entryVcmd {} {
         return 1
     }
 }
-
-# Clear Log
-pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -side right
 
 # entry
 #pack [entry .p.rf.e ] -fill x
