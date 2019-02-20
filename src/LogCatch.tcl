@@ -1090,16 +1090,25 @@ proc initAutoSaveDirectory {} {
 }
 initAutoSaveDirectory
 
+proc isFileSource {} {
+    global Device
+    return [string match "file:*" $Device]
+}
+
 proc getAutoSaveFileName {} {
     global Device
-    set splitname [split $Device :]
-    set modelOs [lindex $splitname 0]
-    set model [lindex [split $modelOs "/"] 0]
-    set os [lindex [split $modelOs "/"] 1]
-    set device [lindex $splitname 1]
-    set port [lindex $splitname 2]
     set dateTime [exec date +%Y_%m%d_%H%M%S]
-    set fileName "${dateTime}_OS${os}_${model}.txt"
+    if [isFileSource] {
+        set fileName "${dateTime}.txt"
+    } else {
+        set splitname [split $Device :]
+        set modelOs [lindex $splitname 0]
+        set model [lindex [split $modelOs "/"] 0]
+        set os [lindex [split $modelOs "/"] 1]
+        set device [lindex $splitname 1]
+        set port [lindex $splitname 2]
+        set fileName "${dateTime}_OS${os}_${model}.txt"
+    }
     return "$fileName"
 }
 
@@ -1109,7 +1118,7 @@ proc openSource {} {
     LoadFileMode AutoSaveDeviceLog AutoSaveFileName
     closeLoadingFd
     set deny "!"
-    set isFileSource [string match "file:*" $Device]
+    set isFileSource [isFileSource]
     puts "isFileSource: $isFileSource"
     updateProcessTagFilterExpression $isFileSource
     set xiFilter [checkEscapeAll [escapeSlash "$iFilter"]]
@@ -1590,7 +1599,8 @@ proc saveLines {{which "all"}} {
     }
     set ftypes {{"Text files" ".txt"} {"Log files" ".log"}}
     set default_exete ".txt"
-    set filename [tk_getSaveFile -parent . -initialdir $dir -filetypes $ftypes -defaultextension $default_exete]
+    set default_file [getAutoSaveFileName]
+    set filename [tk_getSaveFile -parent . -initialdir $dir -filetypes $ftypes -defaultextension $default_exete -initialfile $default_file]
     if {$filename == ""} {
         return
     }
