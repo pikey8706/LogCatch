@@ -1,7 +1,17 @@
 #!/bin/sh
-#wish
+
 cwd=$(dirname $0)
 echo "run in" $cwd
-wish $cwd/src/LogCatch.tcl --dir $cwd/src 
-exit 0
-# #!/bin/bash
+
+inBG=0
+if [ $# -eq 1 -a "$1" = "-bg" ]
+then
+    inBG=1
+fi
+
+if [ "$inBG" -eq 1 ]
+then
+    wish $cwd/src/LogCatch.tcl --dir $cwd/src &
+else
+    wish $cwd/src/LogCatch.tcl --dir $cwd/src
+fi
