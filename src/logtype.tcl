@@ -20,9 +20,9 @@ proc checkLogType {filename} {
         set threadcnt 0   ;# thread
         set studiocnt 0   ;# studio
         set minimax 2
-        set linemax 30
+        set linemax 100
         while {[gets $rp line] >= 0 && $lcnt <= $linemax} {
-            #puts line/$line
+            # puts $lcnt/{$line}
             set line [string map {\" \\" \{ \\{ \} \\}} "$line"]
             if {"$line" != ""} {
                 set second [string index $line 1]
@@ -80,8 +80,7 @@ proc checkLogType {filename} {
                     set slash20 [string index $line 20]
                     set slash21 [string index $line 21]
                     set if_level [lindex "$line" 4]
-                    # puts "LogLevels: $LogLevels"
-                    # puts "if_level: $if_level"
+                    puts "LogLevels: $LogLevels , if_level: $if_level"
                     if {"$slash20" == "/"} {
                         # time
                         incr timecnt
