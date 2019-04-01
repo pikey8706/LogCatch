@@ -381,7 +381,9 @@ foreach colorTag [lsort [array names TextColorTags]] {
     bind ${fsrch}.hword${colorIndex} <Return> "highlightWord $colorTag"
     bind ${fsrch}.hword${colorIndex} <KeyPress> "autoHighlight $colorTag"
     bind ${fsrch}.hword${colorIndex} <KeyPress> "+seekHighlight $colorTag %K"
-    set HighlightWord($colorTag) "${fsrch}.hword${colorIndex} 0 0 1.0 {}"
+    bind ${fsrch}.hword${colorIndex} <Triple-Left> "nearHighlight $colorTag %K %i"
+    bind ${fsrch}.hword${colorIndex} <Triple-Right> "nearHighlight $colorTag %K %i"
+    set HighlightWord($colorTag) "${fsrch}.hword${colorIndex} 0 0 {} {}"
     if {$OS == "Darwin"} {
         ${fsrch}.hword${colorIndex} config -width 13
     }
@@ -1327,7 +1329,6 @@ proc highlightWord {colorTag {word ""}} {
     if {$sCnt > $cnt} {
         $logview tag raise $colorTag
     }
-    # set HighlightWord($colorTag) "$wentry 0 $sCnt 0.0 {}"
     set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 2 2 $sCnt]
 }
 
@@ -1348,16 +1349,16 @@ proc autoHighlight {colorTag} {
         after cancel $xid
     }
     set xid [after $AUTO_HIGHLIGHT_DELAY after idle highlightWord $colorTag]
-    set wentry [lindex $HighlightWord($colorTag) 0]
-    set idx [lindex $HighlightWord($colorTag) 1]
-    set cnt [lindex $HighlightWord($colorTag) 2]
-    set seekId [lindex $HighlightWord($colorTag) 3]
-    set HighlightWord($colorTag) "$wentry $idx $cnt $seekId $xid"
+    set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 4 4 $xid]
 }
 
 proc seekHighlight {colorTag key} {
     global logview HighlightWord
     if {$key == "Up" || $key == "Down" || $key == "dummy-clean"} {
+        set err [catch {$logview index ${colorTag}.last} index]
+        if {$err} {
+            return
+        }
         set bgcolor [$logview tag cget $colorTag -background]
         set fgcolor [$logview tag cget $colorTag -foreground]
         set bgDark [::tk::Darken $bgcolor 120]
@@ -1365,50 +1366,87 @@ proc seekHighlight {colorTag key} {
         $logview tag config ${colorTag}Seek -background $bgDark -foreground $fgLight \
         -spacing1 5 -spacing3 5 -relief raised -borderwidth 2 -lmargin1 3 -lmargin2 3 -rmargin 3 -offset 3
 
-        set err [catch {$logview index ${colorTag}.last} index]
-        if {$err} {
-            return
-        }
         $logview config -state normal
+        set w [lindex $HighlightWord($colorTag) 0]
         set idx [lindex $HighlightWord($colorTag) 1]
         set sCnt [lindex $HighlightWord($colorTag) 2]
         set err [catch {$logview index ${colorTag}Seek.first} seekFirst]
         set err [catch {$logview index ${colorTag}Seek.last} seekLast]
         if {!$err} {
-            $logview delete $seekFirst $seekLast
             $logview tag remove ${colorTag}Seek 1.0 end
+            $logview delete $seekFirst $seekLast
+            set seekText [$w get]
+            set seekLast [$logview index "$seekFirst + [string length $seekText] chars"]
         }
+        if {$err || $idx == "-1"} {
+            set indexes [lindex $HighlightWord($colorTag) 3]
+            set seekFirst [lindex $indexes 0]
+            set seekLast  [lindex $indexes 1]
+        }
+        set idxDelta 0
         set indexes ""
         if {$key == "Up"} {
-            if {$err} {
+            if {$seekFirst == ""} {
                 set seekFirst [$logview index ${colorTag}.last]
                 set idx [expr $sCnt + 1]
             }
             set indexes [$logview tag prevrange $colorTag $seekFirst]
-            if {$indexes != ""} {
-                incr idx -1
-            }
+            set idxDelta -1
         } elseif {$key == "Down"} {
-            if {$err} {
+            if {$seekLast == ""} {
                 set seekLast [$logview index ${colorTag}.first]
                 set idx 0
             }
             set indexes [$logview tag nextrange $colorTag $seekLast]
-            if {$indexes != ""} {
-                incr idx
-            }
+            set idxDelta 1
         }
         if {$indexes != ""} {
             set seekFirst [lindex $indexes 0]
+            if {$idx == -1} {
+                set tagList [$logview tag ranges $colorTag]
+                set idx [expr [lsearch $tagList $seekFirst] / 2 + 1]
+            } else {
+                incr idx $idxDelta
+            }
             set seekText "$idx > "
             $logview insert $seekFirst $seekText
             set seekLast [$logview index "$seekFirst + [string length $seekText] chars"]
             $logview tag add ${colorTag}Seek $seekFirst $seekLast
             set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 1 1 $idx]
+            set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 3 3 {}]
             spotLight $seekFirst $seekLast $key
         }
         $logview config -state disabled
     }
+}
+
+proc nearHighlight {colorTag key idx} {
+    global logview WrapMode LineCount HighlightWord
+    set w [lindex $HighlightWord($colorTag) 0]
+    set insertIdx [$w index insert]
+    set len [string length [$w get]]
+    if {"Left" == "$key" && 0 == $insertIdx} {
+        set key "Up"
+    } elseif {"Right" == "$key" && $len == $insertIdx} {
+        set key "Down"
+    } else {
+        return
+    }
+    set yportions [$logview yview]
+    set startPortion [lindex $yportions 0]
+    set endPortion [lindex $yportions 1]
+    set startLine [expr int(floor($LineCount * $startPortion))]
+    set endLine [expr int(ceil($LineCount * $endPortion))]
+    if {$key == "Up"} {
+        set indexes "${endLine}.end ${endLine}.end"
+    } elseif {$key == "Down"} {
+        set indexes "${startLine}.0 ${startLine}.0"
+    }
+    set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 1 1 "-1"]
+    set HighlightWord($colorTag) [lreplace $HighlightWord($colorTag) 3 3 "$indexes"]
+    # puts "$colorTag: $HighlightWord($colorTag)"
+    # puts "start: $startLine -> $endLine // $LineCount // indexes: $indexes"
+    seekHighlight $colorTag $key
 }
 
 proc spotLight {seekFirst seekLast key} {
@@ -1493,7 +1531,7 @@ proc removeHighlight {colorTag} {
     if {[info exists HighlightWord($colorTag)]} {
         set wentry [lindex $HighlightWord($colorTag) 0]
         ${wentry}cnt config -text ""
-        set HighlightWord($colorTag) "$wentry 0 0 0.0 {}"
+        set HighlightWord($colorTag) "$wentry 0 0 {} {}"
     }
 }
 
