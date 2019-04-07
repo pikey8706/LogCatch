@@ -622,7 +622,6 @@ proc loadFile {{filename ""}} {
     if [file readable $filename] {
         checkLogType "$filename"
         reloadProc
-        set filename [escapeSpace $filename]
         if {"$filename" != "$LoadFile"} {
             set PrevLoadFile $LoadFile
         }
@@ -644,7 +643,7 @@ proc loadFile {{filename ""}} {
 proc addLoadedFiles {filename} {
     global LoadedFiles
     #lappend LoadedFiles $filename
-    set files $filename
+    lappend files $filename
     foreach xfile $LoadedFiles {
         if {![string match $filename $xfile]} {
             lappend files $xfile
@@ -1149,9 +1148,9 @@ proc openSource {} {
 #       .p.rf.hks.${w} config -state $lvlstate
 #      }
         if {$LoadFileMode} {
-            set Fd [open "| tail -f -n +1 $LoadFile | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+            set Fd [open "| tail -f -n +1 \"$LoadFile\" | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         } else {
-            set Fd [open "| awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" $LoadFile" r]
+            set Fd [open "| awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" \"$LoadFile\"" r]
         }
         set title [file tail $Device]
     } else {
@@ -1169,7 +1168,7 @@ proc openSource {} {
 #set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterExpression/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
 puts "AutoSaveDeviceLog: $AutoSaveDeviceLog file: $AutoSaveFileName"
 if {$AutoSaveDeviceLog} {
-set Fd [open "|tail -f -n +1 $AutoSaveFileName | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+set Fd [open "|tail -f -n +1 \"$AutoSaveFileName\" | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
 } else {
 set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
 }
@@ -1938,8 +1937,7 @@ proc showHistoryList {w} {
     }
     menu $m -tearoff 0
     foreach afile [lrange $LoadedFiles 0 19] {
-        set afile [escapeSpace $afile]
-        $m add command -label "$afile" -command "loadFile $afile"
+        $m add command -label "$afile" -command "loadFile \"$afile\""
     }
     set x [expr [winfo rootx $w] + [winfo width $w]]
     set y [winfo rooty $w]
@@ -1993,10 +1991,9 @@ proc updateSourceList {} {
     pack [button .top.sources.files -text $file_label -command loadFile] -side left
     foreach w "loadfile1 loadfile2 loadfile3" afile "[lrange $LoadedFiles 0 2]" {
         if {[file exists $afile]} {
-            set afile [escapeSpace $afile]
             set f [file tail $afile]
             pack [radiobutton .top.sources.$w -variable Device -value "file:$afile" -text $f \
-            -command "loadFile $afile"] -side left
+            -command "loadFile \"$afile\""] -side left
         }
     }
     bind .top.sources.files <2> "after 200 showOption:FileLoadMode .top.sources.files"
@@ -2070,9 +2067,9 @@ proc openEditor {} {
     if {[file readable $Editor] && [file readable $LoadFile]} {
         if {$OS == "Darwin" && [file isdirectory $Editor] &&
          ([string match "*.app" "$Editor"] || [string match "*.app/" "$Editor"])} {
-            after 100 "exec open -a $editor $LoadFile &"
+            after 100 "exec open -a $editor \"$LoadFile\" &"
         } else {
-            after 100 "exec $editor $LoadFile &"
+            after 100 "exec $editor \"$LoadFile\" &"
         }
     }
 }
