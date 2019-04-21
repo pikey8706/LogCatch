@@ -128,7 +128,7 @@ wm protocol . WM_DELETE_WINDOW safeQuit
 image create photo app_icon -file $runDir/icon_logcatch.gif
 wm iconphoto . app_icon
 # Encoding
-encoding system $Encoding
+# encoding system $Encoding
 # bottom status line
 frame .b -relief raised
 pack .b -side bottom -fill x
@@ -539,7 +539,7 @@ proc getTag {loglevel} {
 }
 
 proc logcat {{clear 1} fd {doFilter 0}} {
-    global logview Device Fd LineCount TrackTail
+    global logview Device Fd Encoding LineCount TrackTail
 
     if {$Fd == ""} {
         tk_messageBox \
@@ -563,6 +563,7 @@ proc logcat {{clear 1} fd {doFilter 0}} {
             focus .p.rf.filsi.ei
         }
         # show logcat from not only device
+        fconfigure $Fd -encoding $Encoding
         fileevent $Fd r "readLine $fd"
         fconfigure $Fd -translation auto;#"crlf lf"
     }
@@ -796,7 +797,7 @@ proc changeEncoding {{encoding ""} {state "normal"}} {
     if {"$encoding" == ""} {
         set encoding $Encoding
     }
-    encoding system $encoding
+    # encoding system $encoding
     .b.encode config -text "encoding: $encoding"
     .b.encode config -state $state
     encodingMenu $state
