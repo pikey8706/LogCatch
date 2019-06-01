@@ -2002,6 +2002,20 @@ proc updateSourceList {} {
     pack [button .top.sources.filehistory -text History -command "after 0 showHistoryList .top.sources.filehistory"] -side left
     #  showHistoryList
     #  bind .top.sources.filehistory <1> {tk_popup .loadhistory %X %Y}
+    after 100 refreshGeometry
+}
+
+proc refreshGeometry {} {
+    set cur_geometry [wm geometry .]
+    set geo_list [split $cur_geometry "x+"]
+    set w [lindex $geo_list 0]
+    set h [lindex $geo_list 1]
+    set x [lindex $geo_list 2]
+    set y [lindex $geo_list 3]
+    set cur_geometry [format "%sx%s+%s+%s" [incr w] $h $x $y]
+    wm geometry . $cur_geometry
+    set cur_geometry [format "%sx%s+%s+%s" [incr w -1] $h $x $y]
+    after 100 wm geometry . $cur_geometry
 }
 
 proc listOtherDevices {w} {
