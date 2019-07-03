@@ -63,6 +63,7 @@ set ProcessTagFilter ""
 set TagFilter ""
 set LogView ""
 set LastLogLevel "V"
+set Win "."
 
 # Filter
 set eFilter ""
@@ -229,6 +230,7 @@ proc showPreferences {} {
     pack [label $w.f3.editorlabel -text "External Editor Path: "] -side left
     pack [entry $w.f3.editorentry -textvariable Editor] -side left -fill x -expand yes
     pack [button $w.f3.editorpath -text "Browse" -command "changeEditor $w"] -side right
+    after 300 refreshGeometry $w
 }
 
 proc changeMenuFace {args} {
@@ -823,6 +825,7 @@ proc garbageHistory {} {
         $w.list insert end $one
     }
     grab set $w
+    after 300 refreshGeometry $w
 }
 
 proc clearHistory {w} {
@@ -864,6 +867,7 @@ proc showAbout {} {
     set w [toplevel .about]
     pack [button $w.close -text Close -command "destroy $w"] -side bottom
     pack [label $w.whoami -text "This is android logcat viewer by tcl/tk."]
+    after 300 refreshGeometry $w
 }
 
 proc safeQuit {} {
@@ -1542,6 +1546,7 @@ proc chooseFontsAndColors {} {
     pack [label $w.whoami -text "Choose fonts and colors."]
     pack [label $w.color -text "Colors"]
     pack [button $w.colorpick -text ColorPicker -command "getColorAndSet $w"] -side right
+    after 300 refreshGeometry $w
 }
 
 proc getColorAndSet {w} {
@@ -1958,7 +1963,7 @@ proc getSerial7 {serialraw} {
 }
 
 proc updateSourceList {} {
-    global Devices Device LoadFile PrevLoadFile LoadedFiles LoadFileMode AutoSaveDeviceLog
+    global Devices Device LoadFile PrevLoadFile LoadedFiles LoadFileMode AutoSaveDeviceLog Win
     foreach one [winfo children .top.sources] {
         # puts "destroy\ $one\ [winfo class $one]"
     #    if {[winfo class $one] == "Radiobutton"} {
@@ -2003,20 +2008,22 @@ proc updateSourceList {} {
     pack [button .top.sources.filehistory -text History -command "after 0 showHistoryList .top.sources.filehistory"] -side left
     #  showHistoryList
     #  bind .top.sources.filehistory <1> {tk_popup .loadhistory %X %Y}
-    after 100 refreshGeometry
+    after 300 refreshGeometry $Win
 }
 
-proc refreshGeometry {} {
-    set cur_geometry [wm geometry .]
+proc refreshGeometry {win} {
+    set cur_geometry [wm geometry $win]
     set geo_list [split $cur_geometry "x+"]
     set w [lindex $geo_list 0]
     set h [lindex $geo_list 1]
     set x [lindex $geo_list 2]
     set y [lindex $geo_list 3]
     set cur_geometry [format "%sx%s+%s+%s" [incr w] $h $x $y]
-    wm geometry . $cur_geometry
+    wm geometry $win $cur_geometry
+    update idletasks
     set cur_geometry [format "%sx%s+%s+%s" [incr w -1] $h $x $y]
-    after 100 wm geometry . $cur_geometry
+    wm geometry $win $cur_geometry
+    update idletasks
 }
 
 proc listOtherDevices {w} {
@@ -2217,6 +2224,7 @@ proc getAdbPath {{parentWin ""} {w2 "none"}} {
     pack [label $ws2.msg -text "status of SDK path:"] -side left
     pack [label $ws2.val] -side left
     pack [checkbutton $w.later -text "Setup ADB_PATH later" -variable NO_ADB] -side bottom
+    after 300 refreshGeometry $w
 #   set SDK_PATH ""
 #   set ADB_PATH ""
     checkAdbPath $w
