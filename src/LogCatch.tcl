@@ -1964,6 +1964,7 @@ proc getSerial7 {serialraw} {
 
 proc updateSourceList {} {
     global Devices Device LoadFile PrevLoadFile LoadedFiles LoadFileMode AutoSaveDeviceLog Win
+    puts "updateSourceList"
     foreach one [winfo children .top.sources] {
         # puts "destroy\ $one\ [winfo class $one]"
     #    if {[winfo class $one] == "Radiobutton"} {
@@ -2182,7 +2183,6 @@ proc checkAdbPath {{w ""} {w2 ""} args} {
         set statusConst 1;# CONFIRMED
         set bgAdb green
         set laterEnabled disabled
-        updateSourceList
     }
     if [winfo exist $w] {
         $w.statusadb.val config -text "$status: \"$ADB_PATH\"" -bg $bgAdb
@@ -2250,11 +2250,11 @@ setupEntryKeyPressFilter
 #bind $fsrch.hword1 <Key-Up> "seekHighlight colorLbl up"
 #detectDevices
 if {!$NO_ADB} {
+    updateSourceList
     if {[checkAdbPath]} {
         puts "ADB_PATH already confirmed."
         return
     }
-    updateSourceList
     after 2000 getAdbPath
 }
 setEditor
