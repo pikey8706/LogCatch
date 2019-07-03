@@ -602,9 +602,9 @@ proc updateView {} {
     }
     set trackTailTask [after 200 trackTail]
 
-    # update idletasks
-    if {$LineCount%200 == 0} {
+    if {$LineCount%100 == 0} {
         update idletasks
+        update
     }
 }
 
@@ -1193,6 +1193,7 @@ set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"NR > 0 && $Proc
 proc closeLoadingFd {} {
     global Fd
     if {$Fd != ""} {
+        fileevent $Fd r ""
         fconfigure $Fd -blocking 0
         close $Fd
         set Fd ""
