@@ -2214,8 +2214,7 @@ proc getAdbPath {{parentWin ""} {w2 "none"}} {
     pack [label  $w.msg -text "Please locate \"adb including directory\" or \"Android SDK directory\"."]
     pack [set wi [frame  $w.inputarea -relief ridge]] -fill x -expand yes
     pack [button  $wi.browse -text browse \
-        -command {set SDK_PATH [tk_chooseDirectory -initialdir ~ \
-        -title "Choose \"adb including directory\" or \"Android SDK directory\""]}] -side right
+        -command {selectAndroidSdkDirectory}] -side right
     pack [entry  $wi.path -textvariable SDK_PATH] -expand yes -fill x
     pack [set ws1 [frame  $w.statusadb -relief ridge]] -fill x -expand yes
     pack [label $ws1.msg -text "status of adb path:"] -side left
@@ -2229,6 +2228,15 @@ proc getAdbPath {{parentWin ""} {w2 "none"}} {
 #   set ADB_PATH ""
     checkAdbPath $w
     setTraceAdbPath $w $w2 1
+}
+
+proc selectAndroidSdkDirectory {} {
+    global SDK_PATH
+    set sdkPath [tk_chooseDirectory -initialdir ~ \
+        -title "Choose \"adb including directory\" or \"Android SDK directory\""]
+    if {"$sdkPath" != ""} {
+        set SDK_PATH $sdkPath
+    }
 }
 
 proc setTraceAdbPath {w w2 on} {
