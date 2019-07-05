@@ -1153,9 +1153,9 @@ proc openSource {} {
 #       .p.rf.hks.${w} config -state $lvlstate
 #      }
         if {$LoadFileMode} {
-            set Fd [open "| tail -f -n +1 \"$LoadFile\" | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+            set Fd [open "| tail -f -n +1 \"$LoadFile\" | awk \"BEGIN{IGNORECASE = 1} NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         } else {
-            set Fd [open "| awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" \"$LoadFile\"" r]
+            set Fd [open "| awk \"BEGIN{IGNORECASE = 1} NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" \"$LoadFile\"" r]
         }
         set title [file tail $Device]
     } else {
@@ -1173,9 +1173,9 @@ proc openSource {} {
 #set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterExpression/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
 puts "AutoSaveDeviceLog: $AutoSaveDeviceLog file: $AutoSaveFileName"
 if {$AutoSaveDeviceLog} {
-set Fd [open "|tail -f -n +1 \"$AutoSaveFileName\" | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+set Fd [open "|tail -f -n +1 \"$AutoSaveFileName\" | awk \"BEGIN{IGNORECASE = 1} NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
 } else {
-set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"BEGIN{IGNORECASE = 1} NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
 }
     }
     puts "src: $Device fd: $Fd"
