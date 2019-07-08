@@ -14,26 +14,27 @@ Spec:
 - View adb logcat logs from a device.
 
 ## Requirement
-You need to prepare commands: wish, awk, and adb(for android).
+You need to prepare commands: wish, gawk, and adb(for android).
 
 Linux:
-awk for filtering, tk package for GUI, and android-sdk for adb.
+gawk for filtering, tk package for GUI, and android-sdk for adb.
 
 Mac:
-android-sdk for adb.
+android-sdk for adb, and gawk.
 
 Windows:
-bash, wish, awk, android-sdk for adb.
+bash, wish, gawk, android-sdk for adb.
 I recommed to install msys-git. This contains git, bash, awk, wish.
 No warranty for subsystem-linux on windows 10. Only mysy-git is supported.
 
 ## Install
 Linux:
-pacman -S awk tk android-tools
-apt-get install awk tk android-tools
+pacman -S gawk tk android-tools
+apt-get install gawk tk android-tools
 
 Mac:
 prepare android-sdk
+brew install gawk
 
 Windows:
 I tested my-app on msysgit enviroment.
