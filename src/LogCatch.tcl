@@ -62,6 +62,7 @@ set ProcessAndOrTag "or"
 set ProcessTagFilter ""
 set TagFilter ""
 set IgnoreCaseFilter 0
+set UseGnuAwk 0
 set LogView ""
 set LastLogLevel "V"
 set Win "."
@@ -122,6 +123,14 @@ proc setEditor {} {
         }
     }
 }
+
+proc checkGnuAwk {} {
+    global UseGnuAwk
+    set foundStatus [catch {exec awk --version | grep -qs "GNU Awk"}]
+    set UseGnuAwk [expr $foundStatus == 0 ? 1 : 0]
+    puts "UseGnuAwk: $UseGnuAwk"
+}
+checkGnuAwk
 
 # Windows
 wm deiconify .
@@ -308,7 +317,9 @@ pack $hks -fill x
 #pack [checkbutton $hks.e -text E -command "changeLevel E" -variable LogLevel(E)] -side left
 #pack [checkbutton $hks.andor -textvariable LevelAndOr -variable LevelAndOr -offvalue "or" -onvalue "and"] -side left -padx 20
 set wProcessFilter $hks.process
-pack [checkbutton $hks.toggle_case_insensitive -text "Ignore case for filters.   " -command "after 300 openSource" -variable IgnoreCaseFilter -relief ridge] -side left
+if {$UseGnuAwk} {
+    pack [checkbutton $hks.toggle_case_insensitive -text "Ignore case for filters.   " -command "after 300 openSource" -variable IgnoreCaseFilter -relief ridge] -side left
+}
 pack [label $hks.labelprocess -text "Process Filter: "] -side left
 pack [button $wProcessFilter -command "after 0 showProcessList $wProcessFilter"] -side left
 set wProcessAndOr $hks.or
@@ -1129,7 +1140,7 @@ proc getAutoSaveFileName {} {
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
     statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag \
-    LoadFileMode AutoSaveDeviceLog AutoSaveFileName IgnoreCaseFilter
+    LoadFileMode AutoSaveDeviceLog AutoSaveFileName IgnoreCaseFilter UseGnuAwk
     closeLoadingFd
     set deny "!"
     set isFileSource [isFileSource]
@@ -1151,7 +1162,7 @@ proc openSource {} {
     puts "pAndOr: \"$ProcessAndOrTag\""
     puts "processTagFilter: \"$ProcessTagFilter\""
 
-    set beginCondition [expr $IgnoreCaseFilter == 1 ? "{BEGIN{IGNORECASE = 1}}" : "{BEGIN{}}"]
+    set beginCondition [expr $UseGnuAwk && $IgnoreCaseFilter ? "{BEGIN{IGNORECASE = 1}}" : "{BEGIN{}}"]
     puts "beginCondition: $beginCondition"
     if {$isFileSource} {
         updateProcessFilterStatus disabled
