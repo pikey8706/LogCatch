@@ -61,6 +61,7 @@ set FilterDeadProcess 1; # 0: none, 1: only the latest dead process, -1: all the
 set ProcessAndOrTag "or"
 set ProcessTagFilter ""
 set TagFilter ""
+set IgnoreCaseFilter 0
 set LogView ""
 set LastLogLevel "V"
 set Win "."
@@ -307,6 +308,7 @@ pack $hks -fill x
 #pack [checkbutton $hks.e -text E -command "changeLevel E" -variable LogLevel(E)] -side left
 #pack [checkbutton $hks.andor -textvariable LevelAndOr -variable LevelAndOr -offvalue "or" -onvalue "and"] -side left -padx 20
 set wProcessFilter $hks.process
+pack [checkbutton $hks.toggle_case_insensitive -text "Ignore case for filters.   " -command "after 300 openSource" -variable IgnoreCaseFilter -relief ridge] -side left
 pack [label $hks.labelprocess -text "Process Filter: "] -side left
 pack [button $wProcessFilter -command "after 0 showProcessList $wProcessFilter"] -side left
 set wProcessAndOr $hks.or
@@ -920,7 +922,7 @@ proc loadPreference {} {
 
 proc saveLastState {} {
     global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace \
-TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess
+TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilter
     global LoadFileMode AutoSaveDeviceLog
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
@@ -975,6 +977,8 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess
         puts $fdW $LoadFileMode
         puts $fdW ":AutoSaveDeviceLog"
         puts $fdW $AutoSaveDeviceLog
+        puts $fdW ":IgnoreCaseFilter"
+        puts $fdW $IgnoreCaseFilter
         puts $fdW ":"
         close $fdW
     }
@@ -982,7 +986,7 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess
 
 proc loadLastState {} {
     global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace TagFilter
-    global hWord LogViewFontName LogViewFontSize FilterDeadProcess LogLevelTags TextColorTags
+    global hWord LogViewFontName LogViewFontSize FilterDeadProcess LogLevelTags TextColorTags IgnoreCaseFilter
     global LoadFileMode AutoSaveDeviceLog
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
@@ -1039,6 +1043,8 @@ proc loadLastState {} {
                     set flag 23
                 } elseif {[string match ":AutoSaveDeviceLog" $line]} {
                     set flag 24
+                } elseif {[string match ":IgnoreCaseFilter" $line]} {
+                    set flag 25
                 } else {
                     set flag 0
                 }
@@ -1076,6 +1082,8 @@ proc loadLastState {} {
                 set LoadFileMode $line
             } elseif {$flag == 24} {
                 set AutoSaveDeviceLog $line
+            } elseif {$flag == 25} {
+                set IgnoreCaseFilter $line
             } else {
             }
         }
@@ -1121,7 +1129,7 @@ proc getAutoSaveFileName {} {
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
     statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag \
-    LoadFileMode AutoSaveDeviceLog AutoSaveFileName
+    LoadFileMode AutoSaveDeviceLog AutoSaveFileName IgnoreCaseFilter
     closeLoadingFd
     set deny "!"
     set isFileSource [isFileSource]
@@ -1137,11 +1145,14 @@ proc openSource {} {
         set lvlAndOr "||"
     }
     set title $Device
+    puts "openSource $Device"
     puts "processFilter: \"$ProcessFilterExpression\""
     puts "tagFilter: \"$TagFilter\""
     puts "pAndOr: \"$ProcessAndOrTag\""
     puts "processTagFilter: \"$ProcessTagFilter\""
 
+    set beginCondition [expr $IgnoreCaseFilter == 1 ? "{BEGIN{IGNORECASE = 1}}" : "{BEGIN{}}"]
+    puts "beginCondition: $beginCondition"
     if {$isFileSource} {
         updateProcessFilterStatus disabled
         set lvlstate normal
@@ -1153,9 +1164,9 @@ proc openSource {} {
 #       .p.rf.hks.${w} config -state $lvlstate
 #      }
         if {$LoadFileMode} {
-            set Fd [open "| tail -f -n +1 \"$LoadFile\" | awk \"BEGIN{IGNORECASE = 1} NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+            set Fd [open "| tail -f -n +1 \"$LoadFile\" | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         } else {
-            set Fd [open "| awk \"BEGIN{IGNORECASE = 1} NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" \"$LoadFile\"" r]
+            set Fd [open "| awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" \"$LoadFile\"" r]
         }
         set title [file tail $Device]
     } else {
@@ -1173,9 +1184,9 @@ proc openSource {} {
 #set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterExpression/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
 puts "AutoSaveDeviceLog: $AutoSaveDeviceLog file: $AutoSaveFileName"
 if {$AutoSaveDeviceLog} {
-set Fd [open "|tail -f -n +1 \"$AutoSaveFileName\" | awk \"BEGIN{IGNORECASE = 1} NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+set Fd [open "|tail -f -n +1 \"$AutoSaveFileName\" | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
 } else {
-set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"BEGIN{IGNORECASE = 1} NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
 }
     }
     puts "src: $Device fd: $Fd"
