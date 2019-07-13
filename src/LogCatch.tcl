@@ -304,7 +304,7 @@ global tagview
 #pack [button $l.b1 -text b1] -side left
 
 # right pane
-set r [frame .p.rf -bg green]
+set r [frame .p.rf]
 pack $r -side right -anchor e -fill both -expand yes -padx 5 -pady 5
 
 set hks [frame .p.rf.hks];# -bg lightblue
