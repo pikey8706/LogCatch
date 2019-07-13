@@ -12,7 +12,7 @@ if EXIST %PATH_LIST% (
 )
 
 set BASH_CMD="bash.exe"
-dir /s /b %SEARCH_PATH% | findstr "%BASH_CMD%$" > path_list.tmp
+dir /s /b %SEARCH_PATH%\bin | findstr "%BASH_CMD%$" > path_list.tmp
 for /f "delims=" %%i in (path_list.tmp) do (
   echo "%%i"
   echo %%i>> %PATH_LIST%
