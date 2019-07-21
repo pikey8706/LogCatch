@@ -17,7 +17,7 @@ set NO_ADB 0
 set CONST_MODEL "ro.product.model"
 set CONST_VERSION "ro.build.version.release"
 set CONST_DEFAULT_ENCODING "utf-8"
-set LogTypes "brief process tag thread raw time threadtime long"
+set CONST_DEFAULT_LOGLEVEL "V"
 set Devices ""
 set Device ""
 set Fd ""
@@ -366,7 +366,7 @@ pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -side right
 # Highlight
 pack [label $fsrch.highlight -text "Highlight:"] -side left
 global LogLevelTags TextViewColorOptions
-set LogLevelTags [list colorBlk colorBlu colorGre colorOrg colorRed]
+set LogLevelTags [list colorBlk colorBlu colorGre colorOrg colorRed colorBlk colorBlk]
 set TextViewColorTag "colorTextView"
 # load text color LogLevelTags
 source $runDir/text_color_loader.tcl
@@ -534,20 +534,16 @@ proc addCheckBtn {w ww text} {
 }
 
 proc getTag {loglevel} {
-    global LogLevelTags LogLevels LastLogLevel
-    if {[lsearch $LogLevels $loglevel] == -1 && [lsearch $LogLevels $LastLogLevel] > -1} {
-        set loglevel $LastLogLevel
-    }
-    set index 0
-    if {$loglevel == "V"} {
-    } elseif {$loglevel == "D"} {
-        incr index
-    } elseif {$loglevel == "I"} {
-        incr index 2
-    } elseif {$loglevel == "W"} {
-        incr index 3
-    } elseif {$loglevel == "E"} {
-        incr index 4
+    global LogLevelTags LogLevels LastLogLevel CONST_DEFAULT_LOGLEVEL
+    set index [lsearch $LogLevels $loglevel]
+    if {$index == -1} {
+        set index [lsearch $LogLevels $LastLogLevel]
+        if {$index > -1} {
+            set loglevel $LastLogLevel
+        } else {
+            set loglevel $CONST_DEFAULT_LOGLEVEL
+            set index [lsearch $LogLevels $loglevel]
+        }
     }
     set LastLogLevel $loglevel
     return [lindex $LogLevelTags $index]
@@ -1167,7 +1163,7 @@ proc openSource {} {
     if {$isFileSource} {
         updateProcessFilterStatus disabled
         set lvlstate normal
-        if {$LogType == "raw"} {
+        if {$LogType == "none"} {
             set lvlAndOr "||"
             set lvlstate disabled
         }

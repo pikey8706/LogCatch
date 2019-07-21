@@ -1,16 +1,16 @@
-set LogTypes "raw brief process tag time thread threadtime long time_eclipse studio"
-set LogType "raw"
+set LogTypes "none brief process tag time thread threadtime long time_eclipse studio"
+set LogType "none"
 set LogLevels "V D I W E A F"
 
 # check first 6 line
 proc checkLogType {filename} {
     global LogType LogLevels
-    set LogType "raw"
+    set LogType "none"
     puts "checking logtype ... \"$filename\""
     set rp [open "$filename" r]
     if {"$rp" != ""} {
         set lcnt 0        ;# line
-        set rcnt 0        ;# raw
+        set ncnt 0        ;# none
         set bcnt 0        ;# brief
         set tagcnt 0      ;# tag
         set pcnt 0        ;# process
@@ -122,8 +122,8 @@ proc checkLogType {filename} {
 
 proc reloadProc {} {
     global LogType runDir
-    if {"$LogType" == "raw"} {
-        source $runDir/readLog_raw.tcl
+    if {"$LogType" == "none"} {
+        source $runDir/readLog_none.tcl
     } elseif {"$LogType" == "time"} {
         source $runDir/readLog_time.tcl
     } elseif {"$LogType" == "time_eclipse"} {
