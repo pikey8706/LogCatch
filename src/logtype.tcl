@@ -1,6 +1,8 @@
 set LogTypes "none brief process tag time thread threadtime long time_eclipse studio"
 set LogType "none"
 set LogLevels "V D I W E A F"
+set LogLevelsLong "Verbose Debug Info Warning Error Assert Fatal"
+set LogLevel(selected) "Verbose"
 
 # check first 6 line
 proc checkLogType {filename} {

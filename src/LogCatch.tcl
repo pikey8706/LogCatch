@@ -301,6 +301,8 @@ pack .p -side top -expand y -fill both -ipadx 5 -ipady 5
 global tagview
 #set tagview $lf
 
+source $runDir/logtype.tcl
+
 #pack [button $l.b1 -text b1] -side left
 
 # right pane
@@ -316,6 +318,11 @@ pack $hks -fill x
 #pack [checkbutton $hks.w -text W -command "changeLevel W" -variable LogLevel(W)] -side left
 #pack [checkbutton $hks.e -text E -command "changeLevel E" -variable LogLevel(E)] -side left
 #pack [checkbutton $hks.andor -textvariable LevelAndOr -variable LevelAndOr -offvalue "or" -onvalue "and"] -side left -padx 20
+pack [labelframe $hks.loglevelframe -text "LogLevel: " -labelanchor w] -side left -padx 2
+set LogLevelView ".p.rf.hks.loglevelframe.loglevel"
+pack [ttk::combobox $LogLevelView -textvariable LogLevel(selected) -state readonly -values $LogLevelsLong -width 7] -side left
+bind $LogLevelView <<ComboboxSelected>> "after 300 openSource"
+
 set wProcessFilter $hks.process
 if {$UseGnuAwk} {
     pack [checkbutton $hks.toggle_case_insensitive -text "Ignore case for filters.   " -command "after 300 openSource" -variable IgnoreCaseFilter -relief ridge] -side left
@@ -597,12 +604,15 @@ proc readLine {fd} {
 
     #if {"$line" != ""} {
         set loglevel [getLogLevel "$line"]
-        set tag [getTag $loglevel]
-        incr LineCount
-        $logview insert end "$line\n" $tag
-        $logview config -state disabled
-        $statusOne config -text $LineCount
-        updateView
+        set acceptLevel [checkAcceptLevel $loglevel]
+        if {$acceptLevel} {
+            set tag [getTag $loglevel]
+            incr LineCount
+            $logview insert end "$line\n" $tag
+            $logview config -state disabled
+            $statusOne config -text $LineCount
+            updateView
+        }
     #}
 }
 
@@ -619,7 +629,26 @@ proc updateView {} {
     }
 }
 
-source $runDir/logtype.tcl
+proc checkAcceptLevel {loglevel} {
+    global LogLevels LogLevelsLong LogLevel LogType
+    # puts "checkAcceptLevel: $loglevel"
+    if {$LogType == "none"} {
+        return 1
+    }
+    set sel_index [lsearch $LogLevelsLong $LogLevel(selected)]
+    set index [lsearch $LogLevels $loglevel]
+    if {$sel_index <= $index} {
+        return 1
+    } else {
+        return 0
+    }
+}
+
+proc updateLogLevelView {} {
+    global LogType LogLevelView
+    set state [expr {($LogType == "none") ? "disabled" : "readonly"}]
+    $LogLevelView config -state $state
+}
 
 proc loadFile {{filename ""}} {
     global Fd PrevLoadFile LoadFile LoadedFiles Device LogType
@@ -633,6 +662,7 @@ proc loadFile {{filename ""}} {
     puts \"$filename\"
     if [file readable $filename] {
         checkLogType "$filename"
+        updateLogLevelView
         reloadProc
         if {"$filename" != "$LoadFile"} {
             set PrevLoadFile $LoadFile
@@ -930,7 +960,7 @@ proc loadPreference {} {
 proc saveLastState {} {
     global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace \
 TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilter
-    global LoadFileMode AutoSaveDeviceLog
+    global LoadFileMode AutoSaveDeviceLog LogLevel
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
     if {! [file isdirectory $dir]} {
@@ -986,6 +1016,8 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilt
         puts $fdW $AutoSaveDeviceLog
         puts $fdW ":IgnoreCaseFilter"
         puts $fdW $IgnoreCaseFilter
+        puts $fdW ":LogLevel(selected)"
+        puts $fdW $LogLevel(selected)
         puts $fdW ":"
         close $fdW
     }
@@ -994,7 +1026,7 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilt
 proc loadLastState {} {
     global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace TagFilter
     global hWord LogViewFontName LogViewFontSize FilterDeadProcess LogLevelTags TextColorTags IgnoreCaseFilter
-    global LoadFileMode AutoSaveDeviceLog
+    global LoadFileMode AutoSaveDeviceLog LogLevel
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
     if {! [file isdirectory $dir]} {
@@ -1052,6 +1084,8 @@ proc loadLastState {} {
                     set flag 24
                 } elseif {[string match ":IgnoreCaseFilter" $line]} {
                     set flag 25
+                } elseif {[string match ":LogLevel(selected)" $line]} {
+                    set flag 26
                 } else {
                     set flag 0
                 }
@@ -1091,6 +1125,8 @@ proc loadLastState {} {
                 set AutoSaveDeviceLog $line
             } elseif {$flag == 25} {
                 set IgnoreCaseFilter $line
+            } elseif {$flag == 26} {
+                set LogLevel(selected) $line
             } else {
             }
         }
@@ -1187,6 +1223,7 @@ proc openSource {} {
         }
         puts device\ $device
         set LogType threadtime
+        updateLogLevelView
         reloadProc
 #set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterExpression/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
 puts "AutoSaveDeviceLog: $AutoSaveDeviceLog file: $AutoSaveFileName"
