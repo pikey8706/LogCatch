@@ -36,13 +36,6 @@ set statusTwo .b.2
 set status3rd .b.3
 set MaxRow 2500
 set TrackTail 0
-set LogLevel(V) 1
-set LogLevel(D) 1
-set LogLevel(I) 1
-set LogLevel(W) 1
-set LogLevel(E) 1
-set LevelFilter "V\\\\/|D\\\\/|I\\\\/|W\\\\/|E\\\\/"
-set LevelAndOr and
 set WrapMode none
 set OS $tcl_platform(os)
 set PLATFORM $tcl_platform(platform)
@@ -311,13 +304,6 @@ pack $r -side right -anchor e -fill both -expand yes -padx 5 -pady 5
 
 set hks [frame .p.rf.hks];# -bg lightblue
 pack $hks -fill x
-#pack [label $hks.l -text "show level: "] -side left
-#pack [checkbutton $hks.v -text V -command "changeLevel V" -variable LogLevel(V)] -side left
-#pack [checkbutton $hks.d -text D -command "changeLevel D" -variable LogLevel(D)] -side left
-#pack [checkbutton $hks.i -text I -command "changeLevel I" -variable LogLevel(I)] -side left
-#pack [checkbutton $hks.w -text W -command "changeLevel W" -variable LogLevel(W)] -side left
-#pack [checkbutton $hks.e -text E -command "changeLevel E" -variable LogLevel(E)] -side left
-#pack [checkbutton $hks.andor -textvariable LevelAndOr -variable LevelAndOr -offvalue "or" -onvalue "and"] -side left -padx 20
 pack [labelframe $hks.loglevelframe -text "LogLevel: " -labelanchor w] -side left -padx 2
 set LogLevelView ".p.rf.hks.loglevelframe.loglevel"
 pack [ttk::combobox $LogLevelView -textvariable LogLevel(selected) -state readonly -values $LogLevelsLong -width 7] -side left
@@ -1170,7 +1156,7 @@ proc getAutoSaveFileName {} {
 }
 
 proc openSource {} {
-    global Fd LoadFile eFilter iFilter Device LineCount LevelFilter LevelAndOr \
+    global Fd LoadFile eFilter iFilter Device LineCount \
     statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag \
     LoadFileMode AutoSaveDeviceLog AutoSaveFileName IgnoreCaseFilter UseGnuAwk
     closeLoadingFd
@@ -1183,10 +1169,6 @@ proc openSource {} {
     if {$eFilter == ""} {
         set deny ""
     }
-    set lvlAndOr "&&"
-    if {$LevelAndOr == "or"} {
-        set lvlAndOr "||"
-    }
     set title $Device
     puts "openSource $Device"
     puts "processFilter: \"$ProcessFilterExpression\""
@@ -1198,14 +1180,6 @@ proc openSource {} {
     puts "beginCondition: $beginCondition"
     if {$isFileSource} {
         updateProcessFilterStatus disabled
-        set lvlstate normal
-        if {$LogType == "none"} {
-            set lvlAndOr "||"
-            set lvlstate disabled
-        }
-#      foreach w {v d i w e andor} {
-#       .p.rf.hks.${w} config -state $lvlstate
-#      }
         if {$LoadFileMode} {
             set Fd [open "| tail -f -n +1 \"$LoadFile\" | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         } else {
@@ -1234,7 +1208,6 @@ set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"$beginCondition
 }
     }
     puts "src: $Device fd: $Fd"
-    puts "LevelFilter => $LevelFilter $lvlAndOr"
     puts "eFilter: $xeFilter"
     puts "ifilter: $xiFilter"
     $statusTwo config -text $ReadingLabel -fg "#15b742"
@@ -1622,23 +1595,6 @@ proc clearLogView {} {
     clearSearchAll
     clearHighlightAll
     $statusOne config -text ""
-}
-
-proc changeLevel {lvl} {
-    global LogLevel LevelFilter
-    set lvlFilter ""
-    foreach lvl {V D I W E} {
-       set on $LogLevel($lvl)
-       if {$on} {
-            if {$lvlFilter != ""} {
-                append lvlFilter "|"
-            }
-            append lvlFilter "$lvl/"
-        }
-    }
-    set LevelFilter [escapeSlash $lvlFilter]
-    puts "LevelFilter: $LevelFilter"
-    openSource
 }
 
 proc checkEscapeAll {s} {
