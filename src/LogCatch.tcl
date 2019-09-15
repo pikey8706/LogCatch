@@ -1130,13 +1130,12 @@ proc openSource {} {
         set LogType threadtime
         updateLogLevelView
         reloadProc
-#set Fd [open "|$ADB_PATH -s $device logcat -v time | awk \"NR > 0 &&  $deny /$xeFilter/ && (/$ProcessFilterExpression/ && (/$TagFilter/ && /$xiFilter/)) {print}{fflush()}\" " r]
-puts "AutoSaveDeviceLog: $AutoSaveDeviceLog file: $AutoSaveFileName"
-if {$AutoSaveDeviceLog} {
-set Fd [open "|tail -f -n +1 \"$AutoSaveFileName\" | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
-} else {
-set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
-}
+        puts "AutoSaveDeviceLog: $AutoSaveDeviceLog file: $AutoSaveFileName"
+        if {$AutoSaveDeviceLog} {
+            set Fd [open "|tail -f -n +1 \"$AutoSaveFileName\" | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+        } else {
+            set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+        }
     }
     puts "src: $Device fd: $Fd"
     puts "eFilter: $xeFilter"
