@@ -23,7 +23,7 @@ set Device ""
 set Fd ""
 set AutoSaveDeviceLog 0; # default: 0
 set AutoSaveFileName ""
-set HOME_PATH [regsub -all "\\\\" "$env(HOME)" "/"]; # switch windows path to unix path
+set HOME_PATH [regsub -all {\\} $env(HOME) {/}]; # } switch windows path to unix path
 set AutoSaveDirectory "$HOME_PATH/${AppName}_AutoSavedDeviceLogs"
 set AutoSaveProcessId ""
 set PrevLoadFile ""
