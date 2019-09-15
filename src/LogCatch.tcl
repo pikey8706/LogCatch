@@ -276,27 +276,7 @@ changeMenuFace
 frame .p ;#-bg "#ff0000"
 pack .p -side top -expand y -fill both -ipadx 5 -ipady 5
 
-# left pane
-#set l [frame .p.lf];# -bg lightgreen
-#pack $l -side left -anchor w -fill both
-#label $l.msg -text SelectTags
-#pack $l.msg
-#set lf [listbox $l.lf -bg white -xscrollcommand "$l.s0 set" -yscrollcommand "$l.s1 set" -width 2]
-#pack $lf -fill both
-#scrollbar $l.s0 -orient horizontal -command "$lf xview"
-#scrollbar $l.s1 -command "$lf yview"
-#grid $l.lf -row 0 -column 0 -sticky nsew
-#grid $l.s0 -row 1 -column 0 -sticky ew
-#grid $l.s1 -row 0 -column 1 -sticky ns
-#pack $l.s1 -side right -anchor e -fill y
-#pack $l.lf -anchor e -fill both -expand yes
-#pack $l.s0 -anchor s -fill x
-global tagview
-#set tagview $lf
-
 source $runDir/logtype.tcl
-
-#pack [button $l.b1 -text b1] -side left
 
 # right pane
 set r [frame .p.rf]
@@ -339,20 +319,6 @@ bind $filse.ee <Return> "updateFilter $filsi.ei $filse.ee"
 # Search
 set fsrch [frame .p.rf.search];# -bg lightblue
 pack $fsrch -fill x
-#pack [label $fsrch.l -text "Search:"] -side left
-#pack [entry $fsrch.e -textvariable ssWord -width 20] -side left -fill x
-#pack [button $fsrch.n -text "Next"  -command "searchWordAll $r.l -forward  $fsrch.e"] -side left
-#pack [label $fsrch.idx -textvariable sIdx] -side left
-#pack [label $fsrch.ecnt -textvariable sCnt] -side left
-#pack [button $fsrch.p -text "Prev" -command "searchWordAll $r.l -backward $fsrch.e"] -side left
-#pack [button $fsrch.x -text "Clear" -command "clearSearchAll"] -side left
-#bind $fsrch.e <Return> "searchAuto $r.l $fsrch.e"
-#bind $fsrch.e <Shift-Return> "searchAuto $r.l $fsrch.e -r"
-#bind . <Control-f> "focus $fsrch.e"
-#pack [entry $fsrch.2 -textvariable s2Word] -side left -fill x
-#pack [entry $fsrch.3 -textvariable s3Word] -side left -fill x
-#pack [entry $fsrch.4 -textvariable s4Word] -side left -fill x
-#pack [entry $fsrch.5 -textvariable s5Word] -side left -fill x
 
 # Clear Log
 pack [button $fsrch.clr -text "Clear Log" -command clearLogView] -side right
@@ -409,23 +375,13 @@ proc entryVcmd {} {
     }
 }
 
-# entry
-#pack [entry .p.rf.e ] -fill x
-
 # logview text/listbox
-if {1} {
-    set LogView $r.l
-    puts "TextView Options: $TextViewColorOptions"
-    eval text $r.l $TextViewColorOptions -xscrollcommand \"$r.s0 set\" -yscrollcommand \"$r.s1 set\" -wrap $WrapMode
-    scrollbar $r.s0 -orient horizontal -command "$r.l xview"
-    scrollbar $r.s1 -command "$r.l yview"
-    #grid $r.l -row 0 -column 0 -sticky nsew
-    #grid $r.s0 -row 1 -column 0 -sticky ew
-    #grid $r.s1 -row 0 -column 1 -sticky ns
-    bind $LogView <1> "focus $LogView"
-} else {
-    listbox $r.l -bg "#eeeeee" ;#-width 200
-}
+set LogView $r.l
+puts "TextView Options: $TextViewColorOptions"
+eval text $r.l $TextViewColorOptions -xscrollcommand \"$r.s0 set\" -yscrollcommand \"$r.s1 set\" -wrap $WrapMode
+scrollbar $r.s0 -orient horizontal -command "$r.l xview"
+scrollbar $r.s1 -command "$r.l yview"
+bind $LogView <1> "focus $LogView"
 pack $r.s1 -side right -anchor e -fill y
 pack $r.l -anchor e -fill both -expand yes
 pack $r.s0 -anchor s -fill x
@@ -492,9 +448,6 @@ menu .logmenu.clear.auto -tearoff 0
 bind $logview <3> {tk_popup .logmenu %X %Y}
 bind $logview <2> {tk_popup .logmenu %X %Y}
 #bind $logview <1> {tk_popup .logmenu %X %Y}
-# buttons
-#button .update -text Update -underline 0 -command logcat
-#pack .update
 $logview config -font $LogViewFontName
 set LogViewFontSize [font config $LogViewFontName -size]
 if {$OS == "Linux"} {
@@ -514,16 +467,6 @@ proc changeFontSize {fName fSize {delta 0}} {
     }
     font config $fontName -size $fontSize
     # puts "$fontName $fontSize"
-}
-
-proc addCheckBtn {w ww text} {
-    global tagview
-    if {$ww != ""} {
-        #checkbutton $w.$ww -text $text -command "xmen"
-        #pack $w.$ww -side top -anchor w
-        #$tagview window create end -window $w.$ww
-        $tagview insert end "$text"
-    }
 }
 
 proc getTag {loglevel} {
@@ -874,18 +817,6 @@ proc clearHistory {w} {
 
     updateLoadedFiles
     tk_messageBox -title "" -message "Failed to open log: $Device ." -type ok -icon error
-}
-
-global taglist
-set taglist ""
-proc updateTags {tag} {
-    global taglist
-    set idx [lsearch $taglist $tag]
-    if { $idx == -1 } {
-        set taglist "$taglist $tag"
-        set ltag [string tolower $tag]
-        addCheckBtn .p.lf $ltag $tag
-    }
 }
 
 proc showAbout {} {
