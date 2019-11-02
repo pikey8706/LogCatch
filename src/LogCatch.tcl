@@ -278,7 +278,7 @@ changeMenuFace
 frame .p ;#-bg "#ff0000"
 pack .p -side top -expand y -fill both -ipadx 5 -ipady 5
 
-source $runDir/logtype.tcl
+source $runDir/reading/logtype.tcl
 
 # right pane
 set r [frame .p.rf]

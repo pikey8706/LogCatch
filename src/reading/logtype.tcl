@@ -124,20 +124,21 @@ proc checkLogType {filename} {
 
 proc reloadProc {} {
     global LogType runDir
+    set readingDir "$runDir/reading"
     if {"$LogType" == "none"} {
-        source $runDir/readLog_none.tcl
+        source $readingDir/readLog_none.tcl
     } elseif {"$LogType" == "time"} {
-        source $runDir/readLog_time.tcl
+        source $readingDir/readLog_time.tcl
     } elseif {"$LogType" == "time_eclipse"} {
-        source $runDir/readLog_time_eclipse.tcl
+        source $readingDir/readLog_time_eclipse.tcl
     } elseif {"$LogType" == "studio"} {
-        source $runDir/readLog_studio.tcl
+        source $readingDir/readLog_studio.tcl
     } elseif {"$LogType" == "long"} {
-        source $runDir/readLog_long.tcl
+        source $readingDir/readLog_long.tcl
     } elseif {"$LogType" == "threadtime"} {
-        source $runDir/readLog_threadtime.tcl
+        source $readingDir/readLog_threadtime.tcl
     } elseif {"$LogType" == "brief"} {
-        source $runDir/readLog_brief.tcl
+        source $readingDir/readLog_brief.tcl
     }
     puts "reload proc readLog for logtype: $LogType"
 }
