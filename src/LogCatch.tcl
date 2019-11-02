@@ -13,6 +13,8 @@ foreach {opt val} $argv {
 set AppName "LogCatch"
 set SDK_PATH "$env(HOME)"
 set ADB_PATH ""
+set CONFIG_PATH "$env(HOME)/.logcatch"
+set PREFERENCE_FILE "settings.conf"
 set NO_ADB 0
 set CONST_MODEL "ro.product.model"
 set CONST_VERSION "ro.build.version.release"
@@ -841,26 +843,21 @@ set Pref(col:bg) "#000000"
 set Pref(col:fg) "#FFFFFF"
 
 proc savePreference {} {
-    global Pref env
-    set dir "$env(HOME)/.logcatch"
-    set prefFile "logcatch.rc"
-    if {! [file isdirectory $dir]} {
-        file mkdir $dir
+    global Pref env CONFIG_PATH PREFERENCE_FILE
+    if {$CONFIG_PATH != ""} {
+        if {! [file isdirectory $CONFIG_PATH]} {
+            file mkdir $CONFIG_PATH
+        }
     }
-    if {! [file isdirectory $dir]} {
-        return
-    }
-    set fdW [open $dir/$prefFile w+]
+    set fdW [open $CONFIG_PATH/$PREFERENCE_FILE w+]
     if {$fdW != ""} {
         close $fdW
     }
 }
 
 proc loadPreference {} {
-    global Pref env
-    set dir "$env(HOME)/.logcatch"
-    set prefFile "logcatchrc"
-    set path $dir/$prefFile
+    global Pref env CONFIG_PATH PREFERENCE_FILE
+    set path $CONFIG_PATH/$PREFERENCE_FILE
     if {[file readable $path]} {
         set fd [open $path r]
         if {$fd != ""} {
