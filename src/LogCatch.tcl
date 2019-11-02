@@ -13,8 +13,6 @@ foreach {opt val} $argv {
 set AppName "LogCatch"
 set SDK_PATH "$env(HOME)"
 set ADB_PATH ""
-set CONFIG_PATH "$env(HOME)/.logcatch"
-set PREFERENCE_FILE "settings.conf"
 set NO_ADB 0
 set CONST_MODEL "ro.product.model"
 set CONST_VERSION "ro.build.version.release"
@@ -835,40 +833,6 @@ proc safeQuit {} {
     stopAutoSavingFile
     saveLastState
     exit 0
-}
-
-
-global Pref
-set Pref(col:bg) "#000000"
-set Pref(col:fg) "#FFFFFF"
-
-proc savePreference {} {
-    global Pref env CONFIG_PATH PREFERENCE_FILE
-    if {$CONFIG_PATH != ""} {
-        if {! [file isdirectory $CONFIG_PATH]} {
-            file mkdir $CONFIG_PATH
-        }
-    }
-    set fdW [open $CONFIG_PATH/$PREFERENCE_FILE w+]
-    if {$fdW != ""} {
-        close $fdW
-    }
-}
-
-proc loadPreference {} {
-    global Pref env CONFIG_PATH PREFERENCE_FILE
-    set path $CONFIG_PATH/$PREFERENCE_FILE
-    if {[file readable $path]} {
-        set fd [open $path r]
-        if {$fd != ""} {
-            while {[gets $fd line] > 0} {
-                set spline [split $line :]
-                set key [lindex $spline 0]
-                set Pref($key) [lindex $spline 1]
-            }
-            close $fd
-        }
-    }
 }
 
 proc saveLastState {} {
@@ -2187,7 +2151,6 @@ proc setTraceAdbPath {w w2 on} {
 }
 
 ## init procedures
-loadPreference
 loadLastState
 updateProcessFilterStatus disabled
 onlyFocusEntry
