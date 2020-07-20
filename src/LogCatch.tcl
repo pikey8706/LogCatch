@@ -1641,12 +1641,24 @@ proc getProcessPackageList {} {
             append serial ":$port"
         }
         if {$serial != ""} {
-            foreach {pId pkgName uName} [exec $ADB_PATH -s $serial shell ps | awk "/^u0|^app/ {print \$2, \$9, \$1}"] {
-                # puts "pId: $pId, pkgName: $pkgName, uName: $uName"
-                # puts "[format "%5d %s" $pId $pkgName]"
-                if {[string is integer "$pId"]} {
-                    lappend lists "[format "%5d %s" $pId $pkgName]"
+            set psHeaders [exec adb -s $serial shell ps | head -1]
+            set userIndex [lsearch $psHeaders "USER"]
+            set pidIndex  [lsearch $psHeaders "PID"]
+            set nameIndex [lsearch $psHeaders "NAME"]
+            if {$userIndex > -1 && $pidIndex > -1 && $nameIndex > -1} {
+                incr userIndex
+                incr pidIndex
+                incr nameIndex
+                set pLists [exec adb -s $serial shell ps | awk "/^u0|^app/ || (\$$nameIndex ~ /^system_server/) || (\$$nameIndex ~ /^zygote/) {print \$$pidIndex, \$$nameIndex, \$$userIndex}"]
+                foreach {pId pkgName uName} $pLists {
+                    # puts "pId: $pId, pkgName: $pkgName, uName: $uName"
+                    # puts "[format "%5d %s" $pId $pkgName]"
+                    if {[string is integer "$pId"]} {
+                        lappend lists "[format "%5d %s" $pId $pkgName]"
+                    }
                 }
+            } else {
+                puts "getProcessPackageList header index error for shll ps."
             }
         }
         set lists [lsort -dictionary -index 1 -incr $lists] 
