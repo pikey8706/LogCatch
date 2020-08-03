@@ -162,11 +162,6 @@ menu .mbar.f -tearoff 0
 .mbar.f add command -label Quit -command "safeQuit" -underline 0
 .mbar add cascade -menu .mbar.f -label $AppName -underline 0
 
-# View menu
-menu .mbar.v -tearoff 0
-.mbar.v add command -label "Font & Colors" -command chooseFontsAndColors -underline 0
-.mbar add cascade -menu .mbar.v -label View -underline 0
-
 global InputSrc
 # Input source menu
 .mbar add cascade -menu .mbar.i -label "Input Source" -underline 0
