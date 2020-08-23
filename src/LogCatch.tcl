@@ -1560,10 +1560,10 @@ proc updateSourceList {} {
         puts "serial raw: $serialraw low: $seriallow device: $device"
         if {$port != ""} {
             set name "$model:$serialraw"
-            set seriallow [regsub -all {\.} $serialraw {_}]
         } else {
             set name "$model:[getSerial7 $serialraw]"
         }
+        set seriallow [regsub -all {\.} $serialraw {_}]
         pack [radiobutton .top.sources.$seriallow -variable Device -value $device -command loadDevice -text $name] -side left
     }
     if {$dlen > 3} {
