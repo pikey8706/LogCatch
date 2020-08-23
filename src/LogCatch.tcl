@@ -1322,7 +1322,7 @@ proc getProcessPackageList {} {
                 puts "getProcessPackageList header index error for shll ps."
             }
         }
-        set lists [lsort -dictionary -index 1 -incr $lists] 
+        set lists [lsort -dictionary -index 0 -decr $lists] 
     }
     set ProcessPackageList $lists
     return $lists
