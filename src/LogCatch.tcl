@@ -1310,7 +1310,7 @@ proc getProcessPackageList {} {
                 incr userIndex
                 incr pidIndex
                 incr nameIndex
-                set pLists [exec adb -s $serial shell ps | awk "/^u0|^app/ || (\$$nameIndex ~ /^system_server/) || (\$$nameIndex ~ /^zygote/) {print \$$pidIndex, \$$nameIndex, \$$userIndex}"]
+                set pLists [exec adb -s $serial shell ps | awk "/^u|^app/ || (\$$nameIndex ~ /^system_server/) || (\$$nameIndex ~ /^zygote/) {print \$$pidIndex, \$$nameIndex, \$$userIndex}"]
                 foreach {pId pkgName uName} $pLists {
                     # puts "pId: $pId, pkgName: $pkgName, uName: $uName"
                     # puts "[format "%5d %s" $pId $pkgName]"
