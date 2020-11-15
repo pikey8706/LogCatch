@@ -1302,7 +1302,7 @@ proc getProcessPackageList {} {
             append serial ":$port"
         }
         if {$serial != ""} {
-            set psHeaders [exec adb -s $serial shell ps | head -1]
+            set psHeaders [exec $ADB_PATH -s $serial shell ps | head -1]
             set userIndex [lsearch $psHeaders "USER"]
             set pidIndex  [lsearch $psHeaders "PID"]
             set nameIndex [lsearch $psHeaders "NAME"]
@@ -1310,7 +1310,7 @@ proc getProcessPackageList {} {
                 incr userIndex
                 incr pidIndex
                 incr nameIndex
-                set pLists [exec adb -s $serial shell ps | awk "/^u|^app/ || (\$$nameIndex ~ /^system_server/) || (\$$nameIndex ~ /^zygote/) {print \$$pidIndex, \$$nameIndex, \$$userIndex}"]
+                set pLists [exec $ADB_PATH -s $serial shell ps | awk "/^u|^app/ || (\$$nameIndex ~ /^system_server/) || (\$$nameIndex ~ /^zygote/) {print \$$pidIndex, \$$nameIndex, \$$userIndex}"]
                 foreach {pId pkgName uName} $pLists {
                     # puts "pId: $pId, pkgName: $pkgName, uName: $uName"
                     # puts "[format "%5d %s" $pId $pkgName]"
