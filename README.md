@@ -13,45 +13,54 @@ Spec:
 - Can read saved logs in a file.
 - View adb logcat logs from a device.
 
-## Requirement
+## Requirements
 You need to prepare commands: wish, gawk, and adb(for android).
 
-Linux:
+### Linux:
 gawk for filtering, tk package for GUI, and android-sdk for adb.
 
-Mac:
+### Mac:
 android-sdk for adb, and gawk.
 
-Windows:
+### Windows:
 bash, wish, gawk, android-sdk for adb.
+
 I recommed to install msys-git. This contains git, bash, awk, wish.
+
 No warranty for subsystem-linux on windows 10. Only mysy-git is supported.
 
 ## Install
-Linux:
-pacman -S gawk tk android-tools
-apt-get install gawk tk android-tools
+### Linux:
+Arch:
+`pacman -S --needed gawk tk android-tools`
 
-Mac:
-prepare android-sdk
-brew install gawk
+Debian/Ubuntu:
+`apt-get install gawk tk android-tools`
 
-Windows:
+
+### Mac:
+`prepare android-sdk`
+
+`brew install gawk`
+
+### Windows:
 I tested my-app on msysgit enviroment.
-Install from : https://git-for-windows.github.io/
+
+Install from : [here](https://git-for-windows.github.io/)
+
 Or active tcl may work().
 
 ## Usage
 To launch app
 
 Linux/Mac user
-- git clone https://github.com/pikey8706/LogCatch.git
+- `git clone https://github.com/pikey8706/LogCatch.git`
 - open LogCatch folder.
 - Just W-click [runOnShell].
 <pre>
-on terminal.
-$ runOnShell
-or
+#on terminal.
+$ ./runOnShell
+#or
 $ wish src/LogCatch.tcl --dir src
 </pre>
 
