@@ -20,7 +20,8 @@ You need to prepare commands: wish, gawk, and adb(for android).
 gawk for filtering, tk package for GUI, and android-sdk for adb.
 
 ### Mac:
-android-sdk for adb, and gawk.
+android-sdk for adb, gawk, and tk(from Homebrew).
+From macOS Monterery, tk vesion 8.6.12(or over) from Homebrew can run this app.
 
 ### Windows:
 bash, wish, gawk, android-sdk for adb.
@@ -41,7 +42,7 @@ Debian/Ubuntu:
 ### Mac:
 `prepare android-sdk`
 
-`brew install gawk`
+`brew install gawk tcl-tk`
 
 ### Windows:
 I tested my-app on msysgit enviroment.
