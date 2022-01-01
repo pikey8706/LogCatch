@@ -1,7 +1,32 @@
 #!/bin/sh
 
+COMMENT='Note: tk_version 8.6.12(or over, from Homebrew repository) can run this app in macOS after Monterey version.\nIn macOS, I recommend to install tcl-tk by "brew install tcl-tk"'
+
 cwd=$(dirname $0)
 echo "run in" $cwd
+
+WISH_PATH=wish
+version=0.0
+for one in $(which -a wish)
+do
+    if [ -f $one ]
+    then
+	cat tk_version_1.sh > tk_version.sh
+	echo exec $one '"$0"' '"$@"' >> tk_version.sh
+	cat tk_version_2.sh >> tk_version.sh
+	one_version=$(./tk_version.sh 2>&1)
+	echo Found tk version: $one_version at $one
+	if [[ "$one_version" > "$version" ]]
+        then
+	    version=$one_version
+            WISH_PATH=$one
+	fi
+    fi
+done
+
+echo use version: $version
+echo $COMMENT
+
 
 inBG=0
 if [ $# -eq 1 -a "$1" = "-bg" ]
@@ -11,7 +36,7 @@ fi
 
 if [ "$inBG" -eq 1 ]
 then
-    wish $cwd/src/LogCatch.tcl --dir $cwd/src &
+    $WISH_PATH $cwd/src/LogCatch.tcl --dir $cwd/src &
 else
-    wish $cwd/src/LogCatch.tcl --dir $cwd/src
+    $WISH_PATH $cwd/src/LogCatch.tcl --dir $cwd/src
 fi
