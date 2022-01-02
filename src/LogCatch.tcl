@@ -26,7 +26,6 @@ set AutoSaveFileName ""
 set HOME_PATH [regsub -all {\\} $env(HOME) {/}]; # } switch windows path to unix path
 set AutoSaveDirectory "$HOME_PATH/${AppName}_AutoSavedDeviceLogs"
 set AutoSaveProcessId ""
-set PrevLoadFile ""
 set LoadFile ""
 set LoadedFiles ""
 set LoadFileMode 0; # 0: Load file one shot, 1: load file incrementaly
@@ -252,7 +251,7 @@ proc updateLogLevelView {} {
 }
 
 proc loadFile {{filename ""}} {
-    global Fd PrevLoadFile LoadFile LoadedFiles Device LogType
+    global Fd LoadFile LoadedFiles Device LogType
     if {$filename == ""} {
         set dir ~
         if {$LoadFile != ""} {
@@ -265,9 +264,6 @@ proc loadFile {{filename ""}} {
         checkLogType "$filename"
         updateLogLevelView
         reloadProc
-        if {"$filename" != "$LoadFile"} {
-            set PrevLoadFile $LoadFile
-        }
         set LoadFile $filename
         set Device "file:$filename"
         addLoadedFiles $filename
@@ -1538,7 +1534,7 @@ proc getSerial7 {serialraw} {
 }
 
 proc updateSourceList {} {
-    global Devices Device LoadFile PrevLoadFile LoadedFiles LoadFileMode AutoSaveDeviceLog Win
+    global Devices Device LoadFile LoadedFiles LoadFileMode AutoSaveDeviceLog Win
     puts "updateSourceList"
     foreach one [winfo children .top.sources] {
         # puts "destroy\ $one\ [winfo class $one]"
