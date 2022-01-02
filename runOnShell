@@ -1,6 +1,6 @@
 #!/bin/sh
 
-COMMENT='Note: tk_version 8.6.12(or over, from Homebrew repository) can run this app in macOS after Monterey version.\nIn macOS, I recommend to install tcl-tk by "brew install tcl-tk"'
+COMMENT='Note: tk_version 8.6.12(or over, from Homebrew repository) can run this app in macOS after Monterey version.\nIn macOS, I recommend to install tcl-tk by "brew install tcl-tk"\n\n'
 
 cwd=$(dirname $0)
 echo "run in" $cwd
@@ -11,20 +11,20 @@ for one in $(which -a wish)
 do
     if [ -f $one ]
     then
-	cat tk_version_1.sh > tk_version.sh
-	echo exec $one '"$0"' '"$@"' >> tk_version.sh
-	cat tk_version_2.sh >> tk_version.sh
-	one_version=$(./tk_version.sh 2>&1)
-	echo Found tk version: $one_version at $one
-	if [[ "$one_version" > "$version" ]]
+        cat $cwd/tk_version_1.sh > $cwd/tk_version.sh
+        echo exec $one '"$0"' '"$@"' >> $cwd/tk_version.sh
+        cat $cwd/tk_version_2.sh >> $cwd/tk_version.sh
+        one_version=$($cwd/tk_version.sh 2>&1)
+        printf "Found tk version:%7s at %s\n" $one_version $one
+        if [[ "$one_version" > "$version" ]]
         then
-	    version=$one_version
+            version=$one_version
             WISH_PATH=$one
-	fi
+        fi
     fi
 done
 
-echo use version: $version
+echo "use (newer) version:" $version
 echo $COMMENT
 
 
