@@ -27,6 +27,7 @@ set HOME_PATH [regsub -all {\\} $env(HOME) {/}]; # } switch windows path to unix
 set AutoSaveDirectory "$HOME_PATH/${AppName}_AutoSavedDeviceLogs"
 set AutoSaveProcessId ""
 set LoadFile ""
+set LoadFiles ""
 set LoadedFiles ""
 set LoadFileMode 0; # 0: Load file one shot, 1: load file incrementaly
 set LineCount 0
