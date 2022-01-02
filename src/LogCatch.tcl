@@ -250,21 +250,31 @@ proc updateLogLevelView {} {
     $LogLevelView config -state $state
 }
 
-proc loadFile {{filename ""}} {
-    global Fd LoadFile LoadedFiles Device LogType
-    if {$filename == ""} {
+proc loadFile {{filenames ""}} {
+    global Fd LoadFile LoadFiles LoadedFiles LoadFileMode Device LogType
+    set filename ""
+    if {$filenames == ""} {
         set dir ~
         if {$LoadFile != ""} {
             set dir [file dirname $LoadFile]
         }
-        set filename [tk_getOpenFile -parent . -initialdir $dir]
+        set multiple [expr {!$LoadFileMode ? true : false}]
+        set filenames [tk_getOpenFile -multiple $multiple -parent . -initialdir $dir]
     }
-    puts \"$filename\"
+    set fileCount [llength $filenames]
+    if {$LoadFileMode && $fileCount > 1} {
+        tk_messageBox -title "" -message "Select one file in Load_File_Mode: Incremental." -type ok -icon error
+        return
+    }
+    set filename [lindex $filenames 0]
+    puts \"$filenames\"
+
     if [file readable $filename] {
         checkLogType "$filename"
         updateLogLevelView
         reloadProc
         set LoadFile $filename
+        set LoadFiles $filenames
         set Device "file:$filename"
         addLoadedFiles $filename
         closeLoadingFd
@@ -707,7 +717,7 @@ proc getAutoSaveFileName {} {
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount \
     statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag \
-    LoadFileMode AutoSaveDeviceLog AutoSaveFileName IgnoreCaseFilter UseGnuAwk
+    LoadFileMode AutoSaveDeviceLog AutoSaveFileName IgnoreCaseFilter UseGnuAwk LoadFiles
     closeLoadingFd
     set deny "!"
     set isFileSource [isFileSource]
@@ -732,7 +742,7 @@ proc openSource {} {
         if {$LoadFileMode} {
             set Fd [open "| tail -f -n +1 \"$LoadFile\" | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         } else {
-            set Fd [open "| awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" \"$LoadFile\"" r]
+            set Fd [open "| awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" $LoadFiles" r]
         }
         set title [file tail $Device]
     } else {
