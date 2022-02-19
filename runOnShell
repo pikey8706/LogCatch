@@ -7,7 +7,10 @@ echo "run in" $cwd
 
 WISH_PATH=wish
 version=0.0
-for one in $(which -a wish)
+
+wishes=("$(which -a wish)" "/usr/local/opt/tcl-tk/bin/wish")
+
+for one in ${wishes[@]}
 do
     if [ -f $one ]
     then
