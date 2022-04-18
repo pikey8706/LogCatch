@@ -226,7 +226,6 @@ proc updateView {} {
 
     if {$LineCount%100 == 0} {
         update idletasks
-        update
     }
 }
 
