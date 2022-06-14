@@ -59,6 +59,7 @@ set UseGnuAwk 0
 set LogView ""
 set LastLogLevel "V"
 set Win "."
+set PollingUpdateTask ""
 
 # Filter
 set eFilter ""
@@ -183,38 +184,68 @@ proc logcat {{clear 1} fd {doFilter 0}} {
         }
         # show logcat from not only device
         fconfigure $Fd -encoding $Encoding
-        fileevent $Fd r "readLine $fd"
-        fconfigure $Fd -translation auto;#"crlf lf"
+        puts "bfsize: [fconfigure $Fd -buffersize]"
+        fconfigure $Fd -blocking 0 -buffering full -translation auto;#"crlf lf"
+        fileevent $Fd r "loadBuffer $fd"
+      # fileevent $Fd r "readLine $fd"
     }
 }
 
-proc readLine {fd} {
-    global logview LineCount statusOne statusTwo MaxRow TrackTail trackTailTask EndLabel EOFLabel
-    $logview config -state normal
+proc loadBuffer {fd} {
+    global PollingUpdateTask logview statusTwo EOFLabel
+    # puts "loadBuffer start: [clock format [clock seconds]]"
+
+    fileevent $fd r ""
+
+    pollingUpdate
+
+    time {
+        while {[set stat [readLine $fd]] >= 0} {
+            focus .p.rf.filsi.ei
+        }
+    }
+
+    if {$PollingUpdateTask != ""} {
+        after cancel $PollingUpdateTask
+    }
+
     if {[eof $fd]} {
-        #$logview insert end $EndLabel colorBlk
-        $logview config -state disabled
         $statusTwo config -text $EOFLabel -fg red
         closeLoadingFd
         closeWaitingFd
         stopAutoSavingFile
-        return
+    } else {
+        # wait for buffering
+        fileevent $fd r "loadBuffer $fd"
     }
 
-    gets $fd line
+    # puts "loadBuffer   end: [clock format [clock seconds]]"
+}
 
-    #if {"$line" != ""} {
+proc readLine {fd} {
+    global logview LineCount statusOne LogLevels
+
+    set cnt [gets $fd line]
+    #puts "$line"
+
+    if {$cnt >= 0} {
         set loglevel [getLogLevel "$line"]
+        if {[lsearch $LogLevels "$loglevel"] == -1} {
+            set loglevel "V"
+        }
         set acceptLevel [checkAcceptLevel $loglevel]
         if {$acceptLevel} {
             set tag [getTag $loglevel]
             incr LineCount
+            $logview config -state normal
             $logview insert end "$line\n" $tag
             $logview config -state disabled
             $statusOne config -text $LineCount
             updateView
         }
-    #}
+    }
+
+    return $cnt
 }
 
 proc updateView {} {
@@ -224,9 +255,18 @@ proc updateView {} {
     }
     set trackTailTask [after 200 trackTail]
 
-    if {$LineCount%100 == 0} {
+    if {$LineCount%8192 == 0} {
         update idletasks
+        # update
     }
+}
+
+proc pollingUpdate {} {
+    global PollingUpdateTask
+    set PollingUpdateTask [after 512 pollingUpdate]
+    # puts "pollingUpdate"
+    # update idletasks
+    update
 }
 
 proc checkAcceptLevel {loglevel} {
