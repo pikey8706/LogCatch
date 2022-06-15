@@ -201,7 +201,6 @@ proc loadBuffer {fd} {
 
     time {
         while {[set stat [readLine $fd]] >= 0} {
-            focus .p.rf.filsi.ei
         }
     }
 
