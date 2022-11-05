@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 COMMENT='Note: tk_version 8.6.12(or over, from Homebrew repository) can run this app in macOS after Monterey version.\nIn macOS, I recommend to install tcl-tk by "brew install tcl-tk"\n\n'
 
