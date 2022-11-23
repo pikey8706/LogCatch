@@ -1347,7 +1347,7 @@ proc getProcessPackageList {} {
             append serial ":$port"
         }
         if {$serial != ""} {
-            set psHeaders [exec $ADB_PATH -s $serial shell ps | head -1]
+            set psHeaders [exec $ADB_PATH -s $serial shell "ps | head -1"]
             set userIndex [lsearch $psHeaders "USER"]
             set pidIndex  [lsearch $psHeaders "PID"]
             set nameIndex [lsearch $psHeaders "NAME"]
