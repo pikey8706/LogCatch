@@ -214,9 +214,9 @@ proc loadBuffer {fd} {
         after cancel $PollingUpdateTask
     }
 
-    puts "loadBuffer   end: [clock format [clock seconds]] $fd"
+    puts "loadBuffer   end: [clock format [clock seconds]] $fd stat: $stat eof: [eof $fd]"
 
-    if {$stat == -1 || [eof $fd]} {
+    if {$stat == -2 || [eof $fd]} {
         $statusTwo config -text $EOFLabel -fg red
         closeLoadingFd
         closeWaitingFd
@@ -242,7 +242,7 @@ proc readLine {fd} {
 
     if {! $Loading} {
         puts "Stop Loading"
-        return -1
+        return -2
     }
 
     set cnt [gets $fd line]
