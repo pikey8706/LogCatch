@@ -63,6 +63,7 @@ set PollingUpdateTask ""
 set Loading 0
 set NextFiles ""
 set NextDevice ""
+set LoadBufferSize 2048
 
 # Filter
 set eFilter ""
@@ -162,7 +163,7 @@ proc getTag {loglevel} {
 }
 
 proc logcat {{clear 1} fd {doFilter 0}} {
-    global logview Device Fd Encoding LineCount TrackTail
+    global logview Device Fd Encoding LineCount TrackTail LoadBufferSize
     puts "logcat"
 
     if {$Fd == ""} {
@@ -188,6 +189,7 @@ proc logcat {{clear 1} fd {doFilter 0}} {
         }
         # show logcat from not only device
         fconfigure $Fd -encoding $Encoding
+        fconfigure $Fd -buffersize $LoadBufferSize
         puts "bfsize: [fconfigure $Fd -buffersize]"
         fconfigure $Fd -blocking 0 -buffering full -translation auto;#"crlf lf"
         fileevent $Fd r "loadBuffer $fd"
@@ -269,13 +271,13 @@ proc readLine {fd} {
 }
 
 proc updateView {} {
-    global trackTailTask LineCount
+    global trackTailTask LineCount LoadBufferSize
     if {"$trackTailTask" != ""} {
         after cancel $trackTailTask
     }
     set trackTailTask [after 200 trackTail]
 
-    if {$LineCount%8192 == 0} {
+    if {[expr $LineCount % ($LoadBufferSize / 2)] == 0} {
         update idletasks
         # update
     }
