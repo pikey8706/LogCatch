@@ -60,6 +60,9 @@ set LogView ""
 set LastLogLevel "V"
 set Win "."
 set PollingUpdateTask ""
+set Loading 0
+set NextFiles ""
+set NextDevice ""
 
 # Filter
 set eFilter ""
@@ -160,6 +163,7 @@ proc getTag {loglevel} {
 
 proc logcat {{clear 1} fd {doFilter 0}} {
     global logview Device Fd Encoding LineCount TrackTail
+    puts "logcat"
 
     if {$Fd == ""} {
         tk_messageBox \
@@ -192,37 +196,54 @@ proc logcat {{clear 1} fd {doFilter 0}} {
 }
 
 proc loadBuffer {fd} {
-    global PollingUpdateTask logview statusTwo EOFLabel
-    # puts "loadBuffer start: [clock format [clock seconds]]"
+    global PollingUpdateTask logview statusTwo EOFLabel Loading NextFiles NextDevice
+    puts "loadBuffer start: [clock format [clock seconds]] $fd"
 
     fileevent $fd r ""
 
     pollingUpdate
 
     time {
+        set Loading 1
         while {[set stat [readLine $fd]] >= 0} {
         }
+        set Loading 0
     }
 
     if {$PollingUpdateTask != ""} {
         after cancel $PollingUpdateTask
     }
 
-    if {[eof $fd]} {
+    puts "loadBuffer   end: [clock format [clock seconds]] $fd"
+
+    if {$stat == -1 || [eof $fd]} {
         $statusTwo config -text $EOFLabel -fg red
         closeLoadingFd
         closeWaitingFd
         stopAutoSavingFile
-    } else {
-        # wait for buffering
-        fileevent $fd r "loadBuffer $fd"
+
+        if {$NextFiles != ""} {
+            loadFile $NextFiles
+            set NextFiles ""
+        } elseif {$NextDevice != ""} {
+            loadDevice $NextDevice
+            set NextDevice ""
+        }
+
+        return
     }
 
-    # puts "loadBuffer   end: [clock format [clock seconds]]"
+    # wait for buffering
+    fileevent $fd r "loadBuffer $fd"
 }
 
 proc readLine {fd} {
-    global logview LineCount statusOne LogLevels
+    global logview LineCount statusOne LogLevels Loading
+
+    if {! $Loading} {
+        puts "Stop Loading"
+        return -1
+    }
 
     set cnt [gets $fd line]
     #puts "$line"
@@ -290,7 +311,15 @@ proc updateLogLevelView {} {
 }
 
 proc loadFile {{filenames ""}} {
-    global Fd LoadFile LoadFiles LoadedFiles LoadFileMode Device LogType
+    global Fd LoadFile LoadFiles LoadedFiles LoadFileMode Device LogType Loading NextFiles
+
+    if {$Loading} {
+        puts "Now Loading,,, stop current loading"
+        set NextFiles $filenames
+        set Loading 0
+        return
+    }
+
     set filename ""
     if {$filenames == ""} {
         set dir ~
@@ -305,8 +334,9 @@ proc loadFile {{filenames ""}} {
         tk_messageBox -title "" -message "Select one file in Load_File_Mode: Incremental." -type ok -icon error
         return
     }
+
     set filename [lindex $filenames 0]
-    puts \"$filenames\"
+    puts "loadFile \"$filenames\""
 
     if [file readable $filename] {
         checkLogType "$filename"
@@ -355,7 +385,15 @@ proc updateLoadedFiles {} {
 }
 
 proc loadDevice {} {
-    global Devices Device Encoding ADB_PATH statusTwo WaitingLabel WaitingFd
+    global Devices Device Encoding ADB_PATH statusTwo WaitingLabel WaitingFd Loading NextDevice
+
+    if {$Loading} {
+        puts "Now Loading,,, stop current loading"
+        set NextDevice $Device
+        set Loading 0
+        return
+    }
+
     closeLoadingFd
     closeWaitingFd
     stopAutoSavingFile
@@ -368,7 +406,7 @@ proc loadDevice {} {
     set Devices $devices
     updateSourceList
     set serial [getSerial $Device]
-    puts "device device: $Device serial: $serial"
+    puts "loadDevice device: $Device serial: $serial"
     $statusTwo config -text $WaitingLabel -fg orange
     set WaitingFd [open "| $ADB_PATH -s $serial wait-for-device" "r"]
     if {$WaitingFd != "" && [tell $WaitingFd] == -1} {
@@ -825,6 +863,7 @@ proc closeLoadingFd {} {
         fileevent $Fd r ""
         fconfigure $Fd -blocking 0
         close $Fd
+        puts "closeLoadingFd $Fd"
         set Fd ""
     }
     updateProcessFilterStatus disabled
