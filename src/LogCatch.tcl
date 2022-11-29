@@ -228,7 +228,7 @@ proc loadBuffer {fd} {
             loadFile $NextFiles
             set NextFiles ""
         } elseif {$NextDevice != ""} {
-            loadDevice $NextDevice
+            loadDevice
             set NextDevice ""
         }
 
