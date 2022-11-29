@@ -279,7 +279,7 @@ proc updateView {} {
 
     if {[expr $LineCount % ($LoadBufferSize / 2)] == 0} {
         update idletasks
-        # update
+        update
     }
 }
 
