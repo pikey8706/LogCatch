@@ -296,8 +296,10 @@ proc updateView {} {
     set trackTailTask [after 200 trackTail]
 
     if {[expr $LineCount % ($LoadBufferSize / 2)] == 0} {
-        update idletasks
+        # update idletasks
         update
+    } elseif {[expr $LineCount % 256] == 0} {
+        update idletasks
     }
 }
 
