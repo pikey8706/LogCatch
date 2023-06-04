@@ -163,7 +163,7 @@ proc getTag {loglevel} {
 }
 
 proc logcat {{clear 1} fd {doFilter 0}} {
-    global logview Device Fd Encoding LineCount TrackTail LoadBufferSize
+    global logview Device Fd Encoding LineCount TrackTail LoadBufferSize Loading
     puts "logcat"
 
     if {$Fd == ""} {
@@ -192,57 +192,75 @@ proc logcat {{clear 1} fd {doFilter 0}} {
         fconfigure $Fd -buffersize $LoadBufferSize
         puts "bfsize: [fconfigure $Fd -buffersize]"
         fconfigure $Fd -blocking 0 -buffering full -translation auto;#"crlf lf"
+        set Loading 1
         fileevent $Fd r "loadBuffer $fd"
       # fileevent $Fd r "readLine $fd"
     }
 }
 
+proc closeLoadBuffer {} {
+    global statusTwo EOFLabel
+    $statusTwo config -text $EOFLabel -fg red
+    closeLoadingFd
+    closeWaitingFd
+    stopAutoSavingFile
+}
+
+proc delayedNextSource {} {
+    global NextFiles NextDevice
+    if {$NextFiles != ""} {
+        loadFile $NextFiles
+        set NextFiles ""
+    } elseif {$NextDevice != ""} {
+        loadDevice
+        set NextDevice ""
+    }
+}
+
 proc loadBuffer {fd} {
-    global PollingUpdateTask logview statusTwo EOFLabel Loading NextFiles NextDevice
-    puts "loadBuffer start: [clock format [clock seconds]] $fd"
+    global PollingUpdateTask logview Loading
 
     fileevent $fd r ""
+
+    set Loading 2
+
+    puts "loadBuffer start: [clock format [clock seconds] -format %X] $fd Loading: $Loading"
 
     pollingUpdate
 
     time {
-        set Loading 1
         while {[set stat [readLine $fd]] >= 0} {
         }
-        set Loading 0
     }
 
     if {$PollingUpdateTask != ""} {
         after cancel $PollingUpdateTask
     }
 
-    puts "loadBuffer   end: [clock format [clock seconds]] $fd stat: $stat eof: [eof $fd]"
+    puts "loadBuffer   end: [clock format [clock seconds] -format %X] $fd stat: $stat eof: [eof $fd]"
 
     if {$stat == -2 || [eof $fd]} {
-        $statusTwo config -text $EOFLabel -fg red
-        closeLoadingFd
-        closeWaitingFd
-        stopAutoSavingFile
+        closeLoadBuffer
 
-        if {$NextFiles != ""} {
-            loadFile $NextFiles
-            set NextFiles ""
-        } elseif {$NextDevice != ""} {
-            loadDevice
-            set NextDevice ""
-        }
+        set Loading 0
+
+        delayedNextSource
+
+        enableDisableSources normal
 
         return
     }
 
     # wait for buffering
+    set Loading 1
+    puts "loadBuffer  wait: [clock format [clock seconds] -format %X] $fd Loading: $Loading"
     fileevent $fd r "loadBuffer $fd"
 }
 
 proc readLine {fd} {
     global logview LineCount statusOne LogLevels Loading
 
-    if {! $Loading} {
+    if {$Loading == -1} {
         puts "Stop Loading"
         return -2
     }
@@ -315,11 +333,19 @@ proc updateLogLevelView {} {
 proc loadFile {{filenames ""}} {
     global Fd LoadFile LoadFiles LoadedFiles LoadFileMode Device LogType Loading NextFiles
 
-    if {$Loading} {
-        puts "Now Loading,,, stop current loading"
-        set NextFiles $filenames
-        set Loading 0
-        return
+    puts "loadDeviloadFilece"
+
+    if {$Loading != 0} {
+        puts "Now Loading,,, stop current loading. files: $filenames"
+        enableDisableSources disabled
+
+        if {$Loading == 1} {
+            fileevent $Fd r ""
+        } elseif {$Loading == 2} {
+            set NextFiles $filenames
+            set Loading -1
+            return
+        }
     }
 
     set filename ""
@@ -338,7 +364,8 @@ proc loadFile {{filenames ""}} {
     }
 
     set filename [lindex $filenames 0]
-    puts "loadFile \"$filenames\""
+    puts "loadFile \"$filename\""
+    puts "loadFiles \"$filenames\""
 
     if [file readable $filename] {
         checkLogType "$filename"
@@ -386,19 +413,34 @@ proc updateLoadedFiles {} {
     updateSourceList
 }
 
-proc loadDevice {} {
-    global Devices Device Encoding ADB_PATH statusTwo WaitingLabel WaitingFd Loading NextDevice
+proc enableDisableSources {status} {
+    foreach one [winfo children .top.sources] {
+        $one config -state $status
+    }
+}
 
-    if {$Loading} {
-        puts "Now Loading,,, stop current loading"
-        set NextDevice $Device
-        set Loading 0
-        return
+proc loadDevice {} {
+    global Devices Device Encoding ADB_PATH statusTwo WaitingLabel WaitingFd Loading NextDevice Fd
+
+    puts "loadDevice"
+
+    if {$Loading != 0} {
+        puts "Now Loading,,, stop current loading. device: $Device"
+        enableDisableSources disabled
+
+        if {$Loading == 1} {
+            fileevent $Fd r ""
+        } elseif {$Loading == 2} {
+            set NextDevice $Device
+            set Loading -1
+            return
+        }
     }
 
     closeLoadingFd
     closeWaitingFd
     stopAutoSavingFile
+ 
     set devices $Device
     foreach xdevice $Devices {
         if {![string match $Device $xdevice]} {
