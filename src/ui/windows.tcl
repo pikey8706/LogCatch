@@ -77,7 +77,7 @@ proc menuLogcatch {w} {
 }
 
 proc showPreferences {} {
-    global ADB_PATH MenuFace
+    global ADB_PATH MenuFace RemoteLogClearOnLoad
     set w .preferences
     if {[winfo exists $w]} {
         raise $w
@@ -102,6 +102,9 @@ proc showPreferences {} {
     pack [label $w.f3.editorlabel -text "External Editor Path: "] -side left
     pack [entry $w.f3.editorentry -textvariable Editor] -side left -fill x -expand yes
     pack [button $w.f3.editorpath -text "Browse" -command "changeEditor $w"] -side right
+    pack [frame $w.f4] -fill x
+    pack [checkbutton $w.f4.remoteclearbox -text "Clear ADB Log on Device Connect" -variable RemoteLogClearOnLoad -relief ridge] -side right
+
     after 300 refreshGeometry $w
 }
 
