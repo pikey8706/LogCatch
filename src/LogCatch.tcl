@@ -45,6 +45,8 @@ set LineCount 0
 set statusOne .b.1
 set statusTwo .b.2
 set status3rd .b.3
+set LOG_LEVELS_STR "VDIWEFS"
+set LOG_LEVELS_LIST [split $LOG_LEVELS_STR {}]
 set MaxRow 2500
 set TrackTail 0
 set WrapMode none
@@ -1343,21 +1345,66 @@ proc escapeSpace {s} {
     return $x
 }
 
+proc UpdateNativeTagFilterForSelected {} {
+    global NativeTagFilter LOG_LEVELS_STR LOG_LEVELS_LIST
+    array set FinalLogLevel {}
+    set arr [split $NativeTagFilter " "]
+    foreach itm $arr {
+        if {[ regexp {([^:]+):([VDIWEFS])} $itm full tag loglevel ]} {
+            set FinalLogLevel($tag) $loglevel
+        }
+    }
+
+    set text [getSelectedLines]
+    set lines [split $text "\n"]
+    foreach line $lines {
+
+        if {[ regexp {\.([0-9]{3})\s+([0-9]+)\s+([0-9]+)\s+([VDIWEFS])\s+([^ :]+)} $line full ms pid tid loglevel tag ]} {
+            if { [info exists FinalLogLevel($tag)] } {
+                set curVal $FinalLogLevel($tag)
+            } else {
+                set curVal "V"
+            }
+            set curIndex [ lsearch -exact $LOG_LEVELS_LIST $curVal ]
+            set newIndex [ lsearch -exact $LOG_LEVELS_LIST $loglevel ]
+            if { $curIndex <= $newIndex } {
+                if { $loglevel != "S" } {
+                    incr newIndex
+                }
+                set FinalLogLevel($tag) [lindex $LOG_LEVELS_LIST $newIndex]
+            }
+        }
+
+    }
+    set NativeTagFilter ""
+    foreach key [array names FinalLogLevel] { 
+        append NativeTagFilter "$key:$FinalLogLevel($key)" " "
+    }
+
+    openSource
+}
+proc getLogLines {sdx edx} {
+    global logview
+    cleanSeekHighlight
+    return [$logview get $sdx $edx]
+}
+
+proc getSelectedLines {} { 
+    global logview
+    set rangenums [split [$logview tag ranges sel] " ."]
+    set sl [lindex $rangenums 0]
+    set sc [lindex $rangenums 1]
+    set el [lindex $rangenums 2]
+    set ec [lindex $rangenums 3]
+    puts "sel: $sl.$sc $el.$ec"
+    set sdx "$sl.0"
+    set edx "$el.end"
+    return [getLogLines $sdx $edx]
+}
+
 proc saveLines {{which "all"}} {
     global logview LoadedFiles
     # default which==all
-    set sdx "1.0"
-    set edx "end"
-    if {$which == "selected"} {
-        set rangenums [split [$logview tag ranges sel] " ."]
-        set sl [lindex $rangenums 0]
-        set sc [lindex $rangenums 1]
-        set el [lindex $rangenums 2]
-        set ec [lindex $rangenums 3]
-        puts "sel: $sl.$sc $el.$ec"
-        set sdx "$sl.0"
-        set edx "$el.end"
-    }
     set dir ~
     set lastLoadedFile [lindex $LoadedFiles 0]
     if {[file exist $lastLoadedFile]} {
@@ -1373,7 +1420,11 @@ proc saveLines {{which "all"}} {
     cleanSeekHighlight
     set wp [open $filename w]
     if {$wp != ""} {
-        set texts [$logview get $sdx $edx]
+        if {$which == "selected"} {
+            set text [getSelectedLines]
+        }else{
+            set text [getLogLines "1.0" "end"]
+        }
         puts $wp $texts
         close $wp
         addLoadedFiles $filename

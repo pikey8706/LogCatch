@@ -276,6 +276,8 @@ foreach colorTag [array names TextColorTags] {
 menu .logmenu -tearoff 0
 .logmenu add command -label "Save all lines" -command "saveLines all"
 .logmenu add command -label "Save selected lines" -command "saveLines selected"
+.logmenu add command -label "Require Higher LogLevel For Tag" -command "UpdateNativeTagFilterForSelected"
+
 .logmenu add separator
 .logmenu add command -label "Select all lines" -command "selectLines all"
 .logmenu add separator
