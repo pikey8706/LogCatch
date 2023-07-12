@@ -3,10 +3,19 @@
 exec wish "$0" -- "$@"
 
 set runDir [pwd]
+set procRegex ""
+set autoOpenDevice ""
 foreach {opt val} $argv {
     if {"$opt" == "--dir"} {
         set runDir $val
     }
+    if {"$opt" == "--proc"} {
+        set procRegex $val
+    }
+    if {"$opt" == "--device"} {
+        set autoOpenDevice $val
+    }
+}
 }
 
 # globals
@@ -1426,7 +1435,7 @@ proc getSerial {device {lower 0}} {
 }
 
 proc detectDevices {} {
-    global Device Devices OS MenuFace
+    global Device Devices OS MenuFace autoOpenDevice
     getDevices
     if {$MenuFace != "button"} {
        set idx [expr {$OS =="Darwin" ? "2" : "3"}]
@@ -1435,12 +1444,25 @@ proc detectDevices {} {
            .mbar.i.d add radiobutton -label $device -variable Device -value $device -command loadDevice
        }
     }
+    
     updateSourceList
+    if {"$autoOpenDevice" != ""} {
+        foreach device $Devices {
+            if {[ regexp -nocase $autoOpenDevice $device ]} {
+                set Device "$device"
+                loadDevice
+                break
+            }
+        }
+        set autoOpenDevice ""
+    }
+
+    
     return [lindex $Devices 0]
 }
 
 proc getProcessPackageList {} {
-    global ADB_PATH Device ProcessPackageList
+    global ADB_PATH Device ProcessPackageList wProcessFilter procRegex
     set lists ""
     if {![string match "file:*" $Device]} {
         set splitname [split $Device :]
@@ -1472,7 +1494,25 @@ proc getProcessPackageList {} {
                 puts "getProcessPackageList header index error for shll ps."
             }
         }
-        set lists [lsort -dictionary -index 0 -decr $lists] 
+        foreach name $lists {
+            regsub {[0-9]+ (.+)} $name {\1} key
+            lappend list2 [list $key $name]
+        }
+        set lists ""
+        foreach pair [lsort -index 0 -dictionary $list2] {
+            lappend lists [lindex $pair 1]
+        }
+        if {"$procRegex" != ""} {
+            set regex "$procRegex"
+            set procRegex ""
+            set w $wProcessFilter
+            foreach name $lists {
+                if {[ regexp -nocase $regex $name ]} {
+                    processFilter $w add $name
+                }
+            }
+        }
+
     }
     set ProcessPackageList $lists
     return $lists
@@ -2003,6 +2043,10 @@ onlyFocusEntry
 #wVector . 1 "config -takefocus"
 setupEntryKeyPressFilter
 #bind $fsrch.hword1 <Key-Up> "seekHighlight colorLbl up"
+
+if {"$autoOpenDevice" != ""} {
+    detectDevices;
+}
 #detectDevices
 if {!$NO_ADB} {
     updateSourceList
