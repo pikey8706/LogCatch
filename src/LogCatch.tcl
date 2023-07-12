@@ -5,6 +5,19 @@ exec wish "$0" -- "$@"
 set runDir [pwd]
 set procRegex ""
 set autoOpenDevice ""
+set showConsole 0
+
+for { set i 0 } { $i < [llength $argv] } { incr i } {
+    set opt [lindex $argv $i]
+    if { "$opt" eq "--console" } {
+        set showConsole 1
+    } else {
+        continue
+    }
+    set argv [lreplace $argv $i $i]
+    incr i -1
+}
+
 foreach {opt val} $argv {
     if {"$opt" == "--dir"} {
         set runDir $val
@@ -16,8 +29,9 @@ foreach {opt val} $argv {
         set autoOpenDevice $val
     }
 }
+if { $showConsole } {
+    console show
 }
-
 # globals
 set AppName "LogCatch"
 set SDK_PATH "$env(HOME)"
@@ -31,6 +45,7 @@ set Devices ""
 set Device ""
 set NativeTagFilter ""
 set Fd ""
+set DBGLOG_LOAD_BUFFER 0;
 set AutoSaveDeviceLog 0; # default: 0
 set AutoSaveFileName ""
 set HOME_PATH [regsub -all {\\} $env(HOME) {/}]; # } switch windows path to unix path
@@ -231,13 +246,15 @@ proc delayedNextSource {} {
 }
 
 proc loadBuffer {fd} {
-    global PollingUpdateTask logview Loading
+    global PollingUpdateTask logview Loading DBGLOG_LOAD_BUFFER
 
     fileevent $fd r ""
 
     set Loading 2
 
-    puts "loadBuffer start: [clock format [clock seconds] -format %X] $fd Loading: $Loading"
+    if {$DBGLOG_LOAD_BUFFER} {
+        puts "loadBuffer start: [clock format [clock seconds] -format %X] $fd Loading: $Loading"
+    }
 
     pollingUpdate
 
@@ -249,8 +266,9 @@ proc loadBuffer {fd} {
     if {$PollingUpdateTask != ""} {
         after cancel $PollingUpdateTask
     }
-
-    puts "loadBuffer   end: [clock format [clock seconds] -format %X] $fd stat: $stat eof: [eof $fd]"
+    if {$DBGLOG_LOAD_BUFFER} {
+        puts "loadBuffer   end: [clock format [clock seconds] -format %X] $fd stat: $stat eof: [eof $fd]"
+    }
 
     if {$stat == -2 || [eof $fd]} {
         closeLoadBuffer
@@ -266,7 +284,9 @@ proc loadBuffer {fd} {
 
     # wait for buffering
     set Loading 1
-    puts "loadBuffer  wait: [clock format [clock seconds] -format %X] $fd Loading: $Loading"
+    if {$DBGLOG_LOAD_BUFFER} {
+        puts "loadBuffer  wait: [clock format [clock seconds] -format %X] $fd Loading: $Loading"
+    }
     fileevent $fd r "loadBuffer $fd"
 }
 
@@ -930,6 +950,7 @@ proc openSource {} {
             if {$RemoteLogClearOnLoad} {
                 exec $ADB_PATH -s $device logcat --clear
             }
+            puts "Running command: $ADB_PATH -s $device logcat -v threadtime $NativeTagFilter | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" "
             set Fd [open "|$ADB_PATH -s $device logcat -v threadtime $NativeTagFilter | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         }
     }
