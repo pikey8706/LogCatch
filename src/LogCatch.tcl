@@ -30,6 +30,7 @@ set AutoSaveProcessId ""
 set LoadFile ""
 set LoadFiles ""
 set LoadedFiles ""
+set RemoteLogClearOnLoad 0; #1 will call adb --clear on start
 set LoadFileMode 0; # 0: Load file one shot, 1: load file incrementaly
 set LineCount 0
 set statusOne .b.1
@@ -684,6 +685,8 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilt
         puts $fdW $FilterDeadProcess
         puts $fdW ":LoadFileMode"
         puts $fdW $LoadFileMode
+        puts $fdW ":RemoteLogClearOnLoad"
+        puts $fdW $RemoteLogClearOnLoad
         puts $fdW ":AutoSaveDeviceLog"
         puts $fdW $AutoSaveDeviceLog
         puts $fdW ":IgnoreCaseFilter"
@@ -752,6 +755,8 @@ proc loadLastState {} {
                     set flag 22
                 } elseif {[string match ":LoadFileMode" $line]} {
                     set flag 23
+                } elseif {[string match ":RemoteLogClearOnLoad" $line]} {
+                    set flag 27
                 } elseif {[string match ":NativeTagFilter" $line]} {
                     set flag 29
                 } elseif {[string match ":AutoSaveDeviceLog" $line]} {
@@ -795,6 +800,8 @@ proc loadLastState {} {
                 set FilterDeadProcess $line
             } elseif {$flag == 23} {
                 set LoadFileMode $line
+            } elseif {$flag == 27} {
+                set RemoteLogClearOnLoad $line
             } elseif {$flag == 29} {
                 set NativeTagFilter $line
             } elseif {$flag == 24} {
@@ -893,6 +900,9 @@ proc openSource {} {
         if {$AutoSaveDeviceLog} {
             set Fd [open "|tail -f -n +1 \"$AutoSaveFileName\" | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         } else {
+            if {$RemoteLogClearOnLoad} {
+                exec $ADB_PATH -s $device logcat --clear
+            }
             set Fd [open "|$ADB_PATH -s $device logcat -v threadtime $NativeTagFilter | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         }
     }
@@ -1595,11 +1605,13 @@ proc updateProcessFilterExpression {} {
 }
 
 proc updateProcessFilterStatus {status} {
-    global ProcessFilterExpression wProcessFilter wProcessAndOr
+    global ProcessFilterExpression wProcessFilter wProcessAndOr filnf
     set w $wProcessFilter
-    # puts "updateProcessFilterStatus plist: $ProcessFilterExpression status: $status"
+    puts "updateProcessFilterStatus plist: $ProcessFilterExpression status: $status"
     $w config -state $status
     $wProcessAndOr config -state $status
+    $filnf.nf config -state $status
+    $filnf.be config -state $status
 
     set lcnt [llength $ProcessFilterExpression]
     if {$status == "normal"} {
