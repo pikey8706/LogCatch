@@ -1874,8 +1874,8 @@ proc checkAdbPath {{w ""} {w2 ""} args} {
     set bgAdb red
     set bgSdk $bgAdb
     set laterEnabled normal
-    if {[file isdirectory $SDK_PATH/platform-tools] &&
-        [file isdirectory $SDK_PATH/build-tools] &&
+    if {[file isdirectory $SDK_PATH/platform-tools] ||
+        [file isdirectory $SDK_PATH/build-tools] ||
         [file isdirectory $SDK_PATH/tools]} {
         set statusSdk "confirmed"
         set bgSdk green
