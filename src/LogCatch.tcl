@@ -683,6 +683,9 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilt
         puts $fdW $TagFilter
         puts $fdW ":NativeTagFilter"
         puts $fdW $NativeTagFilter
+        puts $fdW ":ProcessAndOrTag"
+        puts $fdW $ProcessAndOrTag
+
         # HighlightWords
         foreach colorTag [array names hWord] {
             puts $fdW ":hWord(${colorTag})"
@@ -698,6 +701,8 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilt
         puts $fdW $LoadFileMode
         puts $fdW ":RemoteLogClearOnLoad"
         puts $fdW $RemoteLogClearOnLoad
+        puts $fdW ":TrackTail"
+        puts $fdW $TrackTail
         puts $fdW ":AutoSaveDeviceLog"
         puts $fdW $AutoSaveDeviceLog
         puts $fdW ":IgnoreCaseFilter"
@@ -768,8 +773,12 @@ proc loadLastState {} {
                     set flag 23
                 } elseif {[string match ":RemoteLogClearOnLoad" $line]} {
                     set flag 27
+                } elseif {[string match ":TrackTail" $line]} {
+                    set flag 28
                 } elseif {[string match ":NativeTagFilter" $line]} {
                     set flag 29
+                } elseif {[string match ":ProcessAndOrTag" $line]} {
+                    set flag 30
                 } elseif {[string match ":AutoSaveDeviceLog" $line]} {
                     set flag 24
                 } elseif {[string match ":IgnoreCaseFilter" $line]} {
@@ -813,8 +822,12 @@ proc loadLastState {} {
                 set LoadFileMode $line
             } elseif {$flag == 27} {
                 set RemoteLogClearOnLoad $line
+            } elseif {$flag == 28} {
+                set TrackTail $line
             } elseif {$flag == 29} {
                 set NativeTagFilter $line
+            } elseif {$flag == 30} {
+                set ProcessAndOrTagSet $line
             } elseif {$flag == 24} {
                 set AutoSaveDeviceLog $line
             } elseif {$flag == 25} {
@@ -825,6 +838,9 @@ proc loadLastState {} {
             }
         }
         close $fd
+        if {"$ProcessAndOrTagSet" == "and"} {
+            changeProcessTagComplex $wProcessAndOr
+        }
         updateLoadedFiles
         changeWrapMode
         changeEncoding
