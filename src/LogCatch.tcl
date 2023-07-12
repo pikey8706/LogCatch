@@ -20,6 +20,7 @@ set CONST_DEFAULT_ENCODING "utf-8"
 set CONST_DEFAULT_LOGLEVEL "V"
 set Devices ""
 set Device ""
+set NativeTagFilter ""
 set Fd ""
 set AutoSaveDeviceLog 0; # default: 0
 set AutoSaveFileName ""
@@ -628,7 +629,7 @@ proc safeQuit {} {
 
 proc saveLastState {} {
     global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace \
-TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilter
+TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilter RemoteLogClearOnLoad TrackTail NativeTagFilter ProcessAndOrTag
     global LoadFileMode AutoSaveDeviceLog LogLevel
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
@@ -668,6 +669,8 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilt
         puts $fdW $MenuFace
         puts $fdW ":TagFilter"
         puts $fdW $TagFilter
+        puts $fdW ":NativeTagFilter"
+        puts $fdW $NativeTagFilter
         # HighlightWords
         foreach colorTag [array names hWord] {
             puts $fdW ":hWord(${colorTag})"
@@ -694,7 +697,7 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilt
 
 proc loadLastState {} {
     global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace TagFilter
-    global hWord LogViewFontName LogViewFontSize FilterDeadProcess LogLevelTags TextColorTags IgnoreCaseFilter
+    global hWord LogViewFontName LogViewFontSize FilterDeadProcess LogLevelTags TextColorTags IgnoreCaseFilter RemoteLogClearOnLoad TrackTail NativeTagFilter wProcessAndOr
     global LoadFileMode AutoSaveDeviceLog LogLevel
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
@@ -749,6 +752,8 @@ proc loadLastState {} {
                     set flag 22
                 } elseif {[string match ":LoadFileMode" $line]} {
                     set flag 23
+                } elseif {[string match ":NativeTagFilter" $line]} {
+                    set flag 29
                 } elseif {[string match ":AutoSaveDeviceLog" $line]} {
                     set flag 24
                 } elseif {[string match ":IgnoreCaseFilter" $line]} {
@@ -790,6 +795,8 @@ proc loadLastState {} {
                 set FilterDeadProcess $line
             } elseif {$flag == 23} {
                 set LoadFileMode $line
+            } elseif {$flag == 29} {
+                set NativeTagFilter $line
             } elseif {$flag == 24} {
                 set AutoSaveDeviceLog $line
             } elseif {$flag == 25} {
@@ -841,7 +848,7 @@ proc getAutoSaveFileName {} {
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount \
     statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag \
-    LoadFileMode AutoSaveDeviceLog AutoSaveFileName IgnoreCaseFilter UseGnuAwk LoadFiles
+    LoadFileMode AutoSaveDeviceLog AutoSaveFileName IgnoreCaseFilter UseGnuAwk LoadFiles RemoteLogClearOnLoad NativeTagFilter
     closeLoadingFd
     set deny "!"
     set isFileSource [isFileSource]
@@ -886,7 +893,7 @@ proc openSource {} {
         if {$AutoSaveDeviceLog} {
             set Fd [open "|tail -f -n +1 \"$AutoSaveFileName\" | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         } else {
-            set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+            set Fd [open "|$ADB_PATH -s $device logcat -v threadtime $NativeTagFilter | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         }
     }
     puts "src: $Device fd: $Fd"
@@ -1187,12 +1194,14 @@ proc initFilter {} {
     set iFilter .+
 }
 
-proc updateFilter {iw ew} {
-    global iFilter eFilter Device
+proc updateFilter {iw ew ntf} {
+    global iFilter eFilter Device NativeTagFilter
     set iFilter "[$iw get]"
     set eFilter "[$ew get]"
+    set NativeTagFilter "[$ntf get]"
     puts "iF: $iFilter"
     puts "eF: $eFilter"
+    puts "nTF: $NativeTagFilter"
     clearSearchAll
     clearHighlightAll
     openSource

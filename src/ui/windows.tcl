@@ -182,8 +182,15 @@ pack $filse -fill x
 pack [label $filse.le -text "Exclusive Filter:"] -side left
 pack [entry $filse.ee -textvariable eFilter] -side left -fill x -expand y
 pack [button $filse.be -text Clear -command "set eFilter \"\"" -takefocus 0] -side right
-bind $filsi.ei <Return> "updateFilter $filsi.ei $filse.ee"
-bind $filse.ee <Return> "updateFilter $filsi.ei $filse.ee"
+set filnf [frame .p.rf.filnf];# -bg lightblue
+pack $filnf -fill x
+pack [label $filnf.li -text "LogCat Native Tag Filter (like cli):"] -side left
+pack [entry $filnf.nf -textvariable NativeTagFilter] -side left -expand y -fill x
+pack [button $filnf.be -text Clear -command "set NativeTagFilter \"\"" -takefocus 0] -side right
+
+bind $filsi.ei <Return> "updateFilter $filsi.ei $filse.ee $filnf.nf"
+bind $filse.ee <Return> "updateFilter $filsi.ei $filse.ee $filnf.nf"
+bind $filnf.nf <Return> "updateFilter $filsi.ei $filse.ee $filnf.nf"
 
 # Search
 set fsrch [frame .p.rf.search];# -bg lightblue
