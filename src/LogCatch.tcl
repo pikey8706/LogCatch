@@ -335,15 +335,15 @@ proc updateLogLevelView {} {
 proc loadFile {{filenames ""}} {
     global Fd LoadFile LoadFiles LoadedFiles LoadFileMode Device LogType Loading NextFiles
 
-    puts "loadDeviloadFilece"
+    puts "loadFile"
 
     if {$Loading != 0} {
-        puts "Now Loading,,, stop current loading. files: $filenames"
-        enableDisableSources disabled
+        puts "Now Loading,,, $Loading stop current loading. files: $filenames"
 
         if {$Loading == 1} {
             fileevent $Fd r ""
         } elseif {$Loading == 2} {
+            enableDisableSources disabled
             set NextFiles $filenames
             set Loading -1
             return
@@ -416,6 +416,7 @@ proc updateLoadedFiles {} {
 }
 
 proc enableDisableSources {status} {
+    puts "enableDisableSources $status"
     foreach one [winfo children .top.sources] {
         $one config -state $status
     }
@@ -427,12 +428,12 @@ proc loadDevice {} {
     puts "loadDevice"
 
     if {$Loading != 0} {
-        puts "Now Loading,,, stop current loading. device: $Device"
-        enableDisableSources disabled
+        puts "Now Loading,,, $Loading stop current loading. device: $Device"
 
         if {$Loading == 1} {
             fileevent $Fd r ""
         } elseif {$Loading == 2} {
+            enableDisableSources disabled
             set NextDevice $Device
             set Loading -1
             return
