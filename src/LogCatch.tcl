@@ -1650,7 +1650,12 @@ proc showHistoryList {w} {
     }
     menu $m -tearoff 0
     foreach afile [lrange $LoadedFiles 0 19] {
-        $m add command -label "$afile" -command "loadFile \"$afile\""
+        set bfile "$afile"
+        if {[llength $bfile] > 1} {
+            set bfile "{$bfile}"
+        }
+        set bfile "{$bfile}"
+        $m add command -label "$afile" -command "loadFile $bfile"
     }
     set x [expr [winfo rootx $w] + [winfo width $w]]
     set y [winfo rooty $w]
@@ -1706,8 +1711,13 @@ proc updateSourceList {} {
     foreach w "loadfile1 loadfile2 loadfile3" afile "[lrange $LoadedFiles 0 2]" {
         if {[file exists $afile]} {
             set f [file tail $afile]
+            set bfile "$afile"
+            if {[llength $bfile] > 1} {
+                set bfile "{$bfile}"
+            }
+            set bfile "{$bfile}"
             pack [radiobutton .top.sources.$w -variable Device -value "file:$afile" -text $f \
-            -command "loadFile \"$afile\""] -side left
+            -command "loadFile $bfile"] -side left
         }
     }
     bind .top.sources.files <2> "after 200 showOption:FileLoadMode .top.sources.files"
