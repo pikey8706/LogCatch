@@ -18,7 +18,7 @@ for /f "delims=" %%i in (path_list.tmp) do (
   echo %%i>> %PATH_LIST%
   echo %%i> bash_path.list
   echo @echo off > logcatch.bat
-  echo "%%i" -l -c "wish src/LogCatch.tcl --dir src" >> logcatch.bat
+  echo "%%i" -l -c "wish src/LogCatch.tcl --dir src %%*" >> logcatch.bat
   break
 )
 del path_list.tmp
@@ -29,9 +29,6 @@ for /f "delims=" %%i in (path_list.tmp) do (
   echo "%%i"
   echo %%i>> %PATH_LIST%
   echo %%i> wish_path.list
-  :: echo @echo off > logcatch.bat
-  :: echo "%%i" src\LogCatch.tcl --dir src >> logcatch.bat
-  :: move /y logcatch.bat ..\
   break
 )
 :: exit /b 0
