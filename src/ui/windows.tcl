@@ -12,8 +12,8 @@ frame .b -relief raised
 pack .b -side bottom -fill x
 pack [label .b.1 -text "0" -relief ridge] -side left
 pack [label .b.2 -text $EOFLabel -relief ridge -fg red] -side left
-pack [checkbutton .b.stick -text TrackTail -command "trackTail" -variable TrackTail -relief ridge] \
-	-side right -padx 3
+pack [checkbutton .b.stick -text TrackTail -command "trackTail" -variable TrackTail -relief ridge] -side right -padx 3
+pack [checkbutton .b.suspendRead -text SuspendRead -command "suspendRead" -variable SuspendReading -relief ridge] -side right -padx 3
 pack [label .b.wmode -text LineWrap -relief ridge] -side right
 pack [label .b.encode -text Encoding -relief ridge] -side right
 pack [label .b.logtype -text "LogType:" -relief ridge] -side right
@@ -77,7 +77,7 @@ proc menuLogcatch {w} {
 }
 
 proc showPreferences {} {
-    global ADB_PATH MenuFace
+    global ADB_PATH MenuFace RemoteLogClearOnLoad
     set w .preferences
     if {[winfo exists $w]} {
         raise $w
@@ -102,6 +102,9 @@ proc showPreferences {} {
     pack [label $w.f3.editorlabel -text "External Editor Path: "] -side left
     pack [entry $w.f3.editorentry -textvariable Editor] -side left -fill x -expand yes
     pack [button $w.f3.editorpath -text "Browse" -command "changeEditor $w"] -side right
+    pack [frame $w.f4] -fill x
+    pack [checkbutton $w.f4.remoteclearbox -text "Clear ADB Log on Device Connect" -variable RemoteLogClearOnLoad -relief ridge] -side right
+
     after 300 refreshGeometry $w
 }
 
@@ -182,8 +185,15 @@ pack $filse -fill x
 pack [label $filse.le -text "Exclusive Filter:"] -side left
 pack [entry $filse.ee -textvariable eFilter] -side left -fill x -expand y
 pack [button $filse.be -text Clear -command "set eFilter \"\"" -takefocus 0] -side right
-bind $filsi.ei <Return> "updateFilter $filsi.ei $filse.ee"
-bind $filse.ee <Return> "updateFilter $filsi.ei $filse.ee"
+set filnf [frame .p.rf.filnf];# -bg lightblue
+pack $filnf -fill x
+pack [label $filnf.li -text "LogCat Native Tag Filter (like cli):"] -side left
+pack [entry $filnf.nf -textvariable NativeTagFilter] -side left -expand y -fill x
+pack [button $filnf.be -text Clear -command "set NativeTagFilter \"\"" -takefocus 0] -side right
+
+bind $filsi.ei <Return> "updateFilter $filsi.ei $filse.ee $filnf.nf"
+bind $filse.ee <Return> "updateFilter $filsi.ei $filse.ee $filnf.nf"
+bind $filnf.nf <Return> "updateFilter $filsi.ei $filse.ee $filnf.nf"
 
 # Search
 set fsrch [frame .p.rf.search];# -bg lightblue
@@ -266,6 +276,8 @@ foreach colorTag [array names TextColorTags] {
 menu .logmenu -tearoff 0
 .logmenu add command -label "Save all lines" -command "saveLines all"
 .logmenu add command -label "Save selected lines" -command "saveLines selected"
+.logmenu add command -label "Require Higher LogLevel For Tag" -command "UpdateNativeTagFilterForSelected"
+
 .logmenu add separator
 .logmenu add command -label "Select all lines" -command "selectLines all"
 .logmenu add separator

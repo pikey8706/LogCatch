@@ -3,12 +3,39 @@
 exec wish "$0" -- "$@"
 
 set runDir [pwd]
+set procRegex ""
+set autoOpenDevice ""
+set autoClearLogOn ""
+set showConsole 0
+
+for { set i 0 } { $i < [llength $argv] } { incr i } {
+    set opt [lindex $argv $i]
+    if { "$opt" eq "--console" } {
+        set showConsole 1
+    } else {
+        continue
+    }
+    set argv [lreplace $argv $i $i]
+    incr i -1
+}
+
 foreach {opt val} $argv {
     if {"$opt" == "--dir"} {
         set runDir $val
     }
+    if {"$opt" == "--proc"} {
+        set procRegex $val
+    }
+    if {"$opt" == "--device"} {
+        set autoOpenDevice $val
+    }
+    if {"$opt" == "--clearOn"} {
+        set autoClearLogOn $val
+    }
 }
-
+if { $showConsole } {
+    console show
+}
 # globals
 set AppName "LogCatch"
 set SDK_PATH "$env(HOME)"
@@ -20,7 +47,9 @@ set CONST_DEFAULT_ENCODING "utf-8"
 set CONST_DEFAULT_LOGLEVEL "V"
 set Devices ""
 set Device ""
+set NativeTagFilter ""
 set Fd ""
+set DBGLOG_LOAD_BUFFER 0;
 set AutoSaveDeviceLog 0; # default: 0
 set AutoSaveFileName ""
 set HOME_PATH [regsub -all {\\} $env(HOME) {/}]; # } switch windows path to unix path
@@ -29,13 +58,17 @@ set AutoSaveProcessId ""
 set LoadFile ""
 set LoadFiles ""
 set LoadedFiles ""
+set RemoteLogClearOnLoad 0; #1 will call adb --clear on start
 set LoadFileMode 0; # 0: Load file one shot, 1: load file incrementaly
 set LineCount 0
 set statusOne .b.1
 set statusTwo .b.2
 set status3rd .b.3
+set LOG_LEVELS_STR "VDIWEFS"
+set LOG_LEVELS_LIST [split $LOG_LEVELS_STR {}]
 set MaxRow 2500
 set TrackTail 0
+set SuspendReading 0
 set WrapMode none
 set OS $tcl_platform(os)
 set PLATFORM $tcl_platform(platform)
@@ -218,13 +251,15 @@ proc delayedNextSource {} {
 }
 
 proc loadBuffer {fd} {
-    global PollingUpdateTask logview Loading
+    global PollingUpdateTask logview Loading DBGLOG_LOAD_BUFFER
 
     fileevent $fd r ""
 
     set Loading 2
 
-    puts "loadBuffer start: [clock format [clock seconds] -format %X] $fd Loading: $Loading"
+    if {$DBGLOG_LOAD_BUFFER} {
+        puts "loadBuffer start: [clock format [clock seconds] -format %X] $fd Loading: $Loading"
+    }
 
     pollingUpdate
 
@@ -236,8 +271,9 @@ proc loadBuffer {fd} {
     if {$PollingUpdateTask != ""} {
         after cancel $PollingUpdateTask
     }
-
-    puts "loadBuffer   end: [clock format [clock seconds] -format %X] $fd stat: $stat eof: [eof $fd]"
+    if {$DBGLOG_LOAD_BUFFER} {
+        puts "loadBuffer   end: [clock format [clock seconds] -format %X] $fd stat: $stat eof: [eof $fd]"
+    }
 
     if {$stat == -2 || [eof $fd]} {
         closeLoadBuffer
@@ -253,12 +289,14 @@ proc loadBuffer {fd} {
 
     # wait for buffering
     set Loading 1
-    puts "loadBuffer  wait: [clock format [clock seconds] -format %X] $fd Loading: $Loading"
+    if {$DBGLOG_LOAD_BUFFER} {
+        puts "loadBuffer  wait: [clock format [clock seconds] -format %X] $fd Loading: $Loading"
+    }
     fileevent $fd r "loadBuffer $fd"
 }
 
 proc readLine {fd} {
-    global logview LineCount statusOne LogLevels Loading
+    global logview LineCount statusOne LogLevels Loading SuspendReading autoClearLogOn
 
     if {$Loading == -1} {
         puts "Stop Loading"
@@ -267,8 +305,16 @@ proc readLine {fd} {
 
     set cnt [gets $fd line]
     #puts "$line"
-
+    if {$SuspendReading} {
+        return $cnt
+    }
     if {$cnt >= 0} {
+        if {"$autoClearLogOn" != ""} {
+            if {[string first $autoClearLogOn $line] != -1} {
+                puts "AutoClearLog str match clearing log "
+                clearLogView
+            }
+        }
         set loglevel [getLogLevel "$line"]
         if {[lsearch $LogLevels "$loglevel"] == -1} {
             set loglevel "V"
@@ -628,7 +674,7 @@ proc safeQuit {} {
 
 proc saveLastState {} {
     global env LoadedFiles iFilter eFilter WrapMode sWord Editor Encoding SDK_PATH ADB_PATH NO_ADB MenuFace \
-TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilter
+TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilter RemoteLogClearOnLoad TrackTail NativeTagFilter ProcessAndOrTag
     global LoadFileMode AutoSaveDeviceLog LogLevel
     set dir "$env(HOME)/.logcatch"
     set loadStateFile "last.state"
@@ -668,6 +714,11 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilt
         puts $fdW $MenuFace
         puts $fdW ":TagFilter"
         puts $fdW $TagFilter
+        puts $fdW ":NativeTagFilter"
+        puts $fdW $NativeTagFilter
+        puts $fdW ":ProcessAndOrTag"
+        puts $fdW $ProcessAndOrTag
+
         # HighlightWords
         foreach colorTag [array names hWord] {
             puts $fdW ":hWord(${colorTag})"
@@ -681,6 +732,10 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilt
         puts $fdW $FilterDeadProcess
         puts $fdW ":LoadFileMode"
         puts $fdW $LoadFileMode
+        puts $fdW ":RemoteLogClearOnLoad"
+        puts $fdW $RemoteLogClearOnLoad
+        puts $fdW ":TrackTail"
+        puts $fdW $TrackTail
         puts $fdW ":AutoSaveDeviceLog"
         puts $fdW $AutoSaveDeviceLog
         puts $fdW ":IgnoreCaseFilter"
@@ -694,7 +749,7 @@ TagFilter hWord LogViewFontName LogViewFontSize FilterDeadProcess IgnoreCaseFilt
 
 proc loadLastState {} {
     global LoadedFiles env WrapMode iFilter eFilter sWord Editor SDK_PATH ADB_PATH NO_ADB MenuFace TagFilter
-    global hWord LogViewFontName LogViewFontSize FilterDeadProcess LogLevelTags TextColorTags IgnoreCaseFilter
+    global hWord LogViewFontName LogViewFontSize FilterDeadProcess LogLevelTags TextColorTags IgnoreCaseFilter RemoteLogClearOnLoad TrackTail NativeTagFilter wProcessAndOr
     global LoadFileMode AutoSaveDeviceLog LogLevel
     set dir "$env(HOME)/.logcatch"
     set loadLastState "last.state"
@@ -749,6 +804,14 @@ proc loadLastState {} {
                     set flag 22
                 } elseif {[string match ":LoadFileMode" $line]} {
                     set flag 23
+                } elseif {[string match ":RemoteLogClearOnLoad" $line]} {
+                    set flag 27
+                } elseif {[string match ":TrackTail" $line]} {
+                    set flag 28
+                } elseif {[string match ":NativeTagFilter" $line]} {
+                    set flag 29
+                } elseif {[string match ":ProcessAndOrTag" $line]} {
+                    set flag 30
                 } elseif {[string match ":AutoSaveDeviceLog" $line]} {
                     set flag 24
                 } elseif {[string match ":IgnoreCaseFilter" $line]} {
@@ -790,6 +853,14 @@ proc loadLastState {} {
                 set FilterDeadProcess $line
             } elseif {$flag == 23} {
                 set LoadFileMode $line
+            } elseif {$flag == 27} {
+                set RemoteLogClearOnLoad $line
+            } elseif {$flag == 28} {
+                set TrackTail $line
+            } elseif {$flag == 29} {
+                set NativeTagFilter $line
+            } elseif {$flag == 30} {
+                set ProcessAndOrTagSet $line
             } elseif {$flag == 24} {
                 set AutoSaveDeviceLog $line
             } elseif {$flag == 25} {
@@ -800,6 +871,9 @@ proc loadLastState {} {
             }
         }
         close $fd
+        if {"$ProcessAndOrTagSet" == "and"} {
+            changeProcessTagComplex $wProcessAndOr
+        }
         updateLoadedFiles
         changeWrapMode
         changeEncoding
@@ -841,7 +915,7 @@ proc getAutoSaveFileName {} {
 proc openSource {} {
     global Fd LoadFile eFilter iFilter Device LineCount \
     statusTwo status3rd AppName ADB_PATH LogType ReadingLabel ProcessFilterExpression TagFilter ProcessTagFilter ProcessAndOrTag \
-    LoadFileMode AutoSaveDeviceLog AutoSaveFileName IgnoreCaseFilter UseGnuAwk LoadFiles
+    LoadFileMode AutoSaveDeviceLog AutoSaveFileName IgnoreCaseFilter UseGnuAwk LoadFiles RemoteLogClearOnLoad NativeTagFilter
     closeLoadingFd
     set deny "!"
     set isFileSource [isFileSource]
@@ -886,7 +960,11 @@ proc openSource {} {
         if {$AutoSaveDeviceLog} {
             set Fd [open "|tail -f -n +1 \"$AutoSaveFileName\" | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         } else {
-            set Fd [open "|$ADB_PATH -s $device logcat -v threadtime | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
+            if {$RemoteLogClearOnLoad} {
+                exec $ADB_PATH -s $device logcat --clear
+            }
+            puts "Running command: $ADB_PATH -s $device logcat -v threadtime $NativeTagFilter | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" "
+            set Fd [open "|$ADB_PATH -s $device logcat -v threadtime $NativeTagFilter | awk \"$beginCondition NR > 0 && $ProcessTagFilter && $deny /$xeFilter/ && /$xiFilter/ {print}{fflush()}\" " r]
         }
     }
     puts "src: $Device fd: $Fd"
@@ -1187,12 +1265,14 @@ proc initFilter {} {
     set iFilter .+
 }
 
-proc updateFilter {iw ew} {
-    global iFilter eFilter Device
+proc updateFilter {iw ew ntf} {
+    global iFilter eFilter Device NativeTagFilter
     set iFilter "[$iw get]"
     set eFilter "[$ew get]"
+    set NativeTagFilter "[$ntf get]"
     puts "iF: $iFilter"
     puts "eF: $eFilter"
+    puts "nTF: $NativeTagFilter"
     clearSearchAll
     clearHighlightAll
     openSource
@@ -1204,7 +1284,9 @@ proc addFilter {kind which} {
     }
     puts "$FilterInEx : $kind"
 }
+proc suspendRead {} {
 
+}
 proc trackTail {} {
     global logview TrackTail trackTailTask
     if {$TrackTail} {
@@ -1315,21 +1397,77 @@ proc escapeSpace {s} {
     return $x
 }
 
+proc UpdateNativeTagFilterForSelected {} {
+    global NativeTagFilter LOG_LEVELS_STR LOG_LEVELS_LIST
+    array set FinalLogLevel {}
+    set arr [split $NativeTagFilter " "]
+    foreach itm $arr {
+        if {[ regexp {([^:]+):([VDIWEFS])} $itm full tag loglevel ]} {
+            set FinalLogLevel($tag) $loglevel
+        }
+    }
+
+    set text [getSelectedLines]
+    if { [string length $text] == 0 } {
+        tk_messageBox \
+        -title "Error" \
+        -message "No lines selected make sure to highlight all or part of one or more lines" \
+        -type ok \
+        -icon error
+        return
+    }
+    set lines [split $text "\n"]
+    foreach line $lines {
+
+        if {[ regexp {\.([0-9]{3})\s+([0-9]+)\s+([0-9]+)\s+([VDIWEFS])\s+([^ :]+)} $line full ms pid tid loglevel tag ]} {
+            if { [info exists FinalLogLevel($tag)] } {
+                set curVal $FinalLogLevel($tag)
+            } else {
+                set curVal "V"
+            }
+            set curIndex [ lsearch -exact $LOG_LEVELS_LIST $curVal ]
+            set newIndex [ lsearch -exact $LOG_LEVELS_LIST $loglevel ]
+            if { $curIndex <= $newIndex } {
+                if { $loglevel != "S" } {
+                    incr newIndex
+                }
+                set FinalLogLevel($tag) [lindex $LOG_LEVELS_LIST $newIndex]
+            }
+        }
+
+    }
+    set NativeTagFilter ""
+    foreach key [array names FinalLogLevel] { 
+        append NativeTagFilter "$key:$FinalLogLevel($key)" " "
+    }
+
+    openSource
+}
+proc getLogLines {sdx edx} {
+    global logview
+    cleanSeekHighlight
+    return [$logview get $sdx $edx]
+}
+
+proc getSelectedLines {} { 
+    global logview
+    set rangenums [split [$logview tag ranges sel] " ."]
+    set sl [lindex $rangenums 0]
+    set sc [lindex $rangenums 1]
+    set el [lindex $rangenums 2]
+    set ec [lindex $rangenums 3]
+    puts "sel: $sl.$sc $el.$ec"
+    if { $sl == "" && $el == "" } {
+        return ""
+    }
+    set sdx "$sl.0"
+    set edx "$el.end"
+    return [getLogLines $sdx $edx]
+}
+
 proc saveLines {{which "all"}} {
     global logview LoadedFiles
     # default which==all
-    set sdx "1.0"
-    set edx "end"
-    if {$which == "selected"} {
-        set rangenums [split [$logview tag ranges sel] " ."]
-        set sl [lindex $rangenums 0]
-        set sc [lindex $rangenums 1]
-        set el [lindex $rangenums 2]
-        set ec [lindex $rangenums 3]
-        puts "sel: $sl.$sc $el.$ec"
-        set sdx "$sl.0"
-        set edx "$el.end"
-    }
     set dir ~
     set lastLoadedFile [lindex $LoadedFiles 0]
     if {[file exist $lastLoadedFile]} {
@@ -1345,8 +1483,12 @@ proc saveLines {{which "all"}} {
     cleanSeekHighlight
     set wp [open $filename w]
     if {$wp != ""} {
-        set texts [$logview get $sdx $edx]
-        puts $wp $texts
+        if {$which == "selected"} {
+            set text [getSelectedLines]
+        } else {
+            set text [getLogLines "1.0" "end"]
+        }
+        puts $wp $text
         close $wp
         addLoadedFiles $filename
     }
@@ -1407,7 +1549,7 @@ proc getSerial {device {lower 0}} {
 }
 
 proc detectDevices {} {
-    global Device Devices OS MenuFace
+    global Device Devices OS MenuFace autoOpenDevice
     getDevices
     if {$MenuFace != "button"} {
        set idx [expr {$OS =="Darwin" ? "2" : "3"}]
@@ -1416,12 +1558,25 @@ proc detectDevices {} {
            .mbar.i.d add radiobutton -label $device -variable Device -value $device -command loadDevice
        }
     }
+    
     updateSourceList
+    if {"$autoOpenDevice" != ""} {
+        foreach device $Devices {
+            if {[ regexp -nocase $autoOpenDevice $device ]} {
+                set Device "$device"
+                loadDevice
+                break
+            }
+        }
+        set autoOpenDevice ""
+    }
+
+    
     return [lindex $Devices 0]
 }
 
 proc getProcessPackageList {} {
-    global ADB_PATH Device ProcessPackageList
+    global ADB_PATH Device ProcessPackageList wProcessFilter procRegex
     set lists ""
     if {![string match "file:*" $Device]} {
         set splitname [split $Device :]
@@ -1453,7 +1608,25 @@ proc getProcessPackageList {} {
                 puts "getProcessPackageList header index error for shll ps."
             }
         }
-        set lists [lsort -dictionary -index 0 -decr $lists] 
+        foreach name $lists {
+            regsub {[0-9]+ (.+)} $name {\1} key
+            lappend list2 [list $key $name]
+        }
+        set lists ""
+        foreach pair [lsort -index 0 -dictionary $list2] {
+            lappend lists [lindex $pair 1]
+        }
+        if {"$procRegex" != ""} {
+            set regex "$procRegex"
+            set procRegex ""
+            set w $wProcessFilter
+            foreach name $lists {
+                if {[ regexp -nocase $regex $name ]} {
+                    processFilter $w add $name
+                }
+            }
+        }
+
     }
     set ProcessPackageList $lists
     return $lists
@@ -1586,11 +1759,13 @@ proc updateProcessFilterExpression {} {
 }
 
 proc updateProcessFilterStatus {status} {
-    global ProcessFilterExpression wProcessFilter wProcessAndOr
+    global ProcessFilterExpression wProcessFilter wProcessAndOr filnf
     set w $wProcessFilter
-    # puts "updateProcessFilterStatus plist: $ProcessFilterExpression status: $status"
+    puts "updateProcessFilterStatus plist: $ProcessFilterExpression status: $status"
     $w config -state $status
     $wProcessAndOr config -state $status
+    $filnf.nf config -state $status
+    $filnf.be config -state $status
 
     set lcnt [llength $ProcessFilterExpression]
     if {$status == "normal"} {
@@ -1982,6 +2157,10 @@ onlyFocusEntry
 #wVector . 1 "config -takefocus"
 setupEntryKeyPressFilter
 #bind $fsrch.hword1 <Key-Up> "seekHighlight colorLbl up"
+
+if {"$autoOpenDevice" != ""} {
+    detectDevices;
+}
 #detectDevices
 if {!$NO_ADB} {
     updateSourceList
