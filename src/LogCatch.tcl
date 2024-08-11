@@ -5,6 +5,7 @@ exec wish "$0" -- "$@"
 set runDir [pwd]
 set procRegex ""
 set autoOpenDevice ""
+set autoClearLogOn ""
 set showConsole 0
 
 for { set i 0 } { $i < [llength $argv] } { incr i } {
@@ -27,6 +28,9 @@ foreach {opt val} $argv {
     }
     if {"$opt" == "--device"} {
         set autoOpenDevice $val
+    }
+    if {"$opt" == "--clearOn"} {
+        set autoClearLogOn $val
     }
 }
 if { $showConsole } {
@@ -292,7 +296,7 @@ proc loadBuffer {fd} {
 }
 
 proc readLine {fd} {
-    global logview LineCount statusOne LogLevels Loading SuspendReading
+    global logview LineCount statusOne LogLevels Loading SuspendReading autoClearLogOn
 
     if {$Loading == -1} {
         puts "Stop Loading"
@@ -305,6 +309,12 @@ proc readLine {fd} {
         return $cnt
     }
     if {$cnt >= 0} {
+        if {"$autoClearLogOn" != ""} {
+            if {[string first $autoClearLogOn $line] != -1} {
+                puts "AutoClearLog str match clearing log "
+                clearLogView
+            }
+        }
         set loglevel [getLogLevel "$line"]
         if {[lsearch $LogLevels "$loglevel"] == -1} {
             set loglevel "V"
