@@ -1464,10 +1464,10 @@ proc saveLines {{which "all"}} {
     if {$wp != ""} {
         if {$which == "selected"} {
             set text [getSelectedLines]
-        }else{
+        } else {
             set text [getLogLines "1.0" "end"]
         }
-        puts $wp $texts
+        puts $wp $text
         close $wp
         addLoadedFiles $filename
     }
