@@ -1398,6 +1398,14 @@ proc UpdateNativeTagFilterForSelected {} {
     }
 
     set text [getSelectedLines]
+    if { [string length $text] == 0 } {
+        tk_messageBox \
+        -title "Error" \
+        -message "No lines selected make sure to highlight all or part of one or more lines" \
+        -type ok \
+        -icon error
+        return
+    }
     set lines [split $text "\n"]
     foreach line $lines {
 
@@ -1439,6 +1447,9 @@ proc getSelectedLines {} {
     set el [lindex $rangenums 2]
     set ec [lindex $rangenums 3]
     puts "sel: $sl.$sc $el.$ec"
+    if { $sl == "" && $el == "" } {
+        return ""
+    }
     set sdx "$sl.0"
     set edx "$el.end"
     return [getLogLines $sdx $edx]
