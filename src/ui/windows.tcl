@@ -12,8 +12,8 @@ frame .b -relief raised
 pack .b -side bottom -fill x
 pack [label .b.1 -text "0" -relief ridge] -side left
 pack [label .b.2 -text $EOFLabel -relief ridge -fg red] -side left
-pack [checkbutton .b.stick -text TrackTail -command "trackTail" -variable TrackTail -relief ridge] \
-	-side right -padx 3
+pack [checkbutton .b.stick -text TrackTail -command "trackTail" -variable TrackTail -relief ridge] -side right -padx 3
+pack [checkbutton .b.suspendRead -text SuspendRead -command "suspendRead" -variable SuspendReading -relief ridge] -side right -padx 3
 pack [label .b.wmode -text LineWrap -relief ridge] -side right
 pack [label .b.encode -text Encoding -relief ridge] -side right
 pack [label .b.logtype -text "LogType:" -relief ridge] -side right

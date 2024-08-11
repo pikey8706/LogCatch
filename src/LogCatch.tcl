@@ -64,6 +64,7 @@ set LOG_LEVELS_STR "VDIWEFS"
 set LOG_LEVELS_LIST [split $LOG_LEVELS_STR {}]
 set MaxRow 2500
 set TrackTail 0
+set SuspendReading 0
 set WrapMode none
 set OS $tcl_platform(os)
 set PLATFORM $tcl_platform(platform)
@@ -291,7 +292,7 @@ proc loadBuffer {fd} {
 }
 
 proc readLine {fd} {
-    global logview LineCount statusOne LogLevels Loading
+    global logview LineCount statusOne LogLevels Loading SuspendReading
 
     if {$Loading == -1} {
         puts "Stop Loading"
@@ -300,7 +301,9 @@ proc readLine {fd} {
 
     set cnt [gets $fd line]
     #puts "$line"
-
+    if {$SuspendReading} {
+        return $cnt
+    }
     if {$cnt >= 0} {
         set loglevel [getLogLevel "$line"]
         if {[lsearch $LogLevels "$loglevel"] == -1} {
@@ -1271,7 +1274,9 @@ proc addFilter {kind which} {
     }
     puts "$FilterInEx : $kind"
 }
+proc suspendRead {} {
 
+}
 proc trackTail {} {
     global logview TrackTail trackTailTask
     if {$TrackTail} {
