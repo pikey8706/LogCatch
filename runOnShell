@@ -1,9 +1,23 @@
 #!/bin/bash
 
-COMMENT='Note: tk_version 8.6.12(or over, from Homebrew repository) can run this app in macOS after Monterey version.\nIn macOS, I recommend to install tcl-tk by "brew install tcl-tk"\n\n'
-
 cwd=$(dirname $0)
 echo "run in" $cwd
+
+
+COMMENT="Note: tk_version 8.6.12(or over, from Homebrew repository) can run this app in macOS after Monterey version.
+In macOS, it's recommended to install tcl-tk by \"brew install tcl-tk\""
+
+isDarwin=0
+darwinWish=/usr/bin/wish
+
+OS=$(uname -s)
+
+if [ "$OS" == "Darwin" ]
+then
+    isDarwin=1
+    echo "$COMMENT"
+fi
+
 
 WISH_PATH=wish
 version=0.0
@@ -14,10 +28,17 @@ for one in ${wishes[@]}
 do
     if [ -f $one ]
     then
+        if [ $isDarwin -eq 1 ]
+        then
+            if [ "$darwinWish" == "$one" ]
+            then
+                continue
+            fi
+        fi
         cat $cwd/tk_version_1.sh > $cwd/tk_version.sh
         echo exec $one '"$0"' '"$@"' >> $cwd/tk_version.sh
         cat $cwd/tk_version_2.sh >> $cwd/tk_version.sh
-        one_version=$($cwd/tk_version.sh 2>&1)
+        one_version=$($cwd/tk_version.sh 2>/dev/null)
         printf "Found tk version:%7s at %s\n" $one_version $one
         if [[ "$one_version" > "$version" ]]
         then
@@ -27,8 +48,15 @@ do
     fi
 done
 
+
+if [ "$version" = "0.0" ]
+then
+    echo "No usable wish found"
+    exit 1
+fi
+
+
 echo "use (newer) version:" $version
-echo $COMMENT
 
 
 inBG=0
